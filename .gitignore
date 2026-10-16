@@ -1,5 +1,6 @@
 .obsidian
 
+.idea/
 .idea
 
 .digitalwallet-docs
@@ -9,4 +10,6 @@
 AGENTS.md
 DECISIONS.md
 PROGRESS.md
+
+.DS_Store
 
