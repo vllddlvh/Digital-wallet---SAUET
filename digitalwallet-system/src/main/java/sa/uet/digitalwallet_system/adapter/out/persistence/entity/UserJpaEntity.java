@@ -1,13 +1,10 @@
 package sa.uet.digitalwallet_system.adapter.out.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -17,26 +14,26 @@ import java.sql.Timestamp;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserJpaEntity {
 
-    @Column(name = "id")
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-            @Id
-    int userId;
+    @Column(name = "id")
+    Long id;
 
-    @Column(name = "username")
-    String userName;
+    @Column(name = "username", nullable = false, unique = true, length = 50)
+    String username;
 
-    @Column(name = "password_hash")
-    String passWord;
+    @Column(name = "password_hash", nullable = false, length = 255)
+    String passwordHash;
 
-    @Column(name = "full_name")
+    @Column(name = "full_name", nullable = false, length = 100)
     String fullName;
 
-    @Column(name = "email")
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     String email;
 
-    @Column(name = "role")
+    @Column(name = "role", nullable = false, length = 20)
     String role;
 
-    @Column(name = "created_at")
-    Timestamp createdAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    LocalDateTime createdAt;
 }
