@@ -7,7 +7,7 @@
 
 ### 1.1. Phạm vi nghiệp vụ (Scope)
 Hệ thống Cơ sở dữ liệu (CSDL) Ví điện tử Digital Wallet (Pha 1) được thiết kế tập trung vào các nghiệp vụ cốt lõi:
-1. **Quản lý danh tính người dùng (Users):** Đăng ký, xác thực đăng nhập, phân quyền cơ bản (`ROLE_USER`, `ROLE_ADMIN`).
+1. **Quản lý danh tính người dùng (Users):** Đăng ký, xác thực đăng nhập, phân quyền cơ bản (`ROLE_USER`).
 2. **Quản lý ví tài khoản (Wallets):** Mỗi người dùng sở hữu 1 ví chính, lưu trữ số dư tức thời, kiểm soát trạng thái ví (`ACTIVE`, `FROZEN`, `CLOSED`).
 3. **Liên kết tài khoản ngân hàng (Linked Bank Accounts):** Quản lý liên kết/hủy liên kết tài khoản ngân hàng (xóa mềm).
 4. **Sổ cái giao dịch bất biến (Transactions Ledger):** Xử lý 3 nghiệp vụ tài chính nền tảng:
@@ -100,15 +100,15 @@ erDiagram
 ### 3.1. Bảng `users` (Danh tính & Đăng nhập)
 Lưu trữ thông tin tài khoản người dùng, chứng thực danh tính và phân quyền truy cập.
 
-| Tên cột | Kiểu dữ liệu | Nullable | Mặc định | Khóa / Ràng buộc | Ý nghĩa nghiệp vụ |
-| :--- | :--- | :---: | :--- | :--- | :--- |
-| `id` | `BIGINT` | NO | `AUTO_INCREMENT` | `PRIMARY KEY` | Định danh duy nhất của người dùng. |
-| `username` | `VARCHAR(50)` | NO | Không | `UNIQUE (uq_users_username)` | Tên đăng nhập người dùng (duy nhất trên toàn hệ thống). |
-| `password_hash` | `VARCHAR(255)` | NO | Không | Không | Mật khẩu băm (Khuyến nghị chuẩn BCrypt/Argon2id, độ dài 60-128 ký tự). |
-| `full_name` | `VARCHAR(100)` | NO | Không | Không | Họ và tên đầy đủ của chủ tài khoản. |
-| `email` | `VARCHAR(100)` | NO | Không | `UNIQUE (uq_users_email)` | Email đăng ký và nhận thông báo biến động số dư. |
-| `role` | `VARCHAR(20)` | NO | `'ROLE_USER'` | `CHECK (role IN ('ROLE_USER', 'ROLE_ADMIN'))` | Vai trò hệ thống để kiểm soát truy cập (RBAC). |
-| `created_at` | `DATETIME(3)` | NO | `CURRENT_TIMESTAMP(3)` | Không | Thời điểm tạo tài khoản (chính xác đến mili-giây). |
+| Tên cột         | Kiểu dữ liệu   | Nullable | Mặc định               | Khóa / Ràng buộc               | Ý nghĩa nghiệp vụ                                                      |
+| :-------------- | :------------- | :------: | :--------------------- | :----------------------------- | :--------------------------------------------------------------------- |
+| `id`            | `BIGINT`       |    NO    | `AUTO_INCREMENT`       | `PRIMARY KEY`                  | Định danh duy nhất của người dùng.                                     |
+| `username`      | `VARCHAR(50)`  |    NO    | Không                  | `UNIQUE (uq_users_username)`   | Tên đăng nhập người dùng (duy nhất trên toàn hệ thống).                |
+| `password_hash` | `VARCHAR(255)` |    NO    | Không                  | Không                          | Mật khẩu băm (Khuyến nghị chuẩn BCrypt/Argon2id, độ dài 60-128 ký tự). |
+| `full_name`     | `VARCHAR(100)` |    NO    | Không                  | Không                          | Họ và tên đầy đủ của chủ tài khoản.                                    |
+| `email`         | `VARCHAR(100)` |    NO    | Không                  | `UNIQUE (uq_users_email)`      | Email đăng ký và nhận thông báo biến động số dư.                       |
+| `role`          | `VARCHAR(20)`  |    NO    | `'ROLE_USER'`          | `CHECK (role IN ('ROLE_USER')` | Vai trò hệ thống để kiểm soát truy cập (RBAC).                         |
+| `created_at`    | `DATETIME(3)`  |    NO    | `CURRENT_TIMESTAMP(3)` | Không                          | Thời điểm tạo tài khoản (chính xác đến mili-giây).                     |
 
 #### Chi tiết Ràng buộc & Chỉ mục:
 - **`uq_users_username` & `uq_users_email`:** Đảm bảo tính độc nhất tuyệt đối, ngăn ngừa việc 1 email hoặc username được đăng ký nhiều lần; đồng thời MySQL tự động tạo B-Tree Index giúp tăng tốc tối đa tác vụ tìm kiếm khi đăng nhập.
