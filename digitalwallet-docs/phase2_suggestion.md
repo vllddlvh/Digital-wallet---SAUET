@@ -1,0 +1,5 @@
+*Về Business
+- Thay đổi quan hệ giữa User và Wallet thành 1 - N để một User có thể quản lý nhiều ví (ví USD, VNĐ,...)
+Về một số use-cases liên quan tới race condition
+- Use-case 1: Khi yêu cầu data từ frontend được gửi nhiều lần, back-end trả về kết quả giống nhau cho những request này. Vậy vấn đề mình gợi ý để các bạn giải quyết là làm sao cho khi thanh toán được khởi tạo, hệ thống payment cần trừ tiền đúng 1 lần để sao cho một message với cùng một nội dung thì được gửi đúng 1 lần tới user.
+- Use-case 2: Số dư hiện tại của User là N, User thực hiện cùng lúc hai request chuyển tiền với lần lượt số tiền là A và B (A + B > N). Cả hai request đều đọc số dư N trước khi bất kỳ request nào cập nhật dữ liệu ==> Cả hai đều nghĩ giao dịch hợp lệ. Vậy các bạn phải giải quyết vấn đề nếu một trong hai transaction thành công trước thì transaction còn lại phải bị từ chối.
