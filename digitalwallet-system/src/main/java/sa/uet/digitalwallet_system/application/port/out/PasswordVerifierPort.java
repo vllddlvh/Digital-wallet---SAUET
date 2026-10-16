@@ -1,4 +1,5 @@
 package sa.uet.digitalwallet_system.application.port.out;
 
-public class PasswordVerifierPort {
+public interface PasswordVerifierPort {
+    boolean matches(String rawPassword, String encodedPassword);
 }
