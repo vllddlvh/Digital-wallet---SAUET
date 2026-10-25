@@ -1,6 +1,9 @@
 package sa.uet.digitalwallet_system.adapter.in.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -11,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import sa.uet.digitalwallet_system.adapter.in.web.dto.request.LinkBankRequest;
 import sa.uet.digitalwallet_system.adapter.in.web.dto.response.ApiResponse;
+import sa.uet.digitalwallet_system.adapter.in.web.dto.response.ErrorResponse;
 import sa.uet.digitalwallet_system.adapter.in.web.dto.response.LinkedBankResponse;
 import sa.uet.digitalwallet_system.application.port.in.GetLinkedBanksUseCase;
 import sa.uet.digitalwallet_system.application.port.in.GetWalletUseCase;
@@ -37,6 +41,15 @@ public class LinkedBankController {
 
     @PostMapping
     @Operation(summary = "Link a new bank account", description = "Links a bank account to the authenticated user's wallet")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Bank account linked successfully"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Wallet not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<ApiResponse<LinkedBankResponse>> linkBank(
             @AuthenticationPrincipal Long userId,
             @Valid @RequestBody LinkBankRequest request) {
@@ -55,6 +68,13 @@ public class LinkedBankController {
 
     @GetMapping
     @Operation(summary = "Get linked bank accounts", description = "Returns active linked bank accounts for current user's wallet")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Linked bank accounts retrieved"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Wallet not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<ApiResponse<List<LinkedBankResponse>>> getLinkedBanks(
             @AuthenticationPrincipal Long userId) {
         Wallet wallet = getWalletUseCase.getWallet(userId);
@@ -67,6 +87,13 @@ public class LinkedBankController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Unlink bank account", description = "Soft-deletes a linked bank account by setting status to UNLINKED")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Bank account unlinked"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Not authenticated",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Linked bank account not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     public ResponseEntity<ApiResponse<Void>> unlinkBank(
             @AuthenticationPrincipal Long userId,
             @PathVariable("id") Long id) {
@@ -75,3 +102,4 @@ public class LinkedBankController {
         return ResponseEntity.ok(ApiResponse.success("Bank account unlinked successfully", null));
     }
 }
+

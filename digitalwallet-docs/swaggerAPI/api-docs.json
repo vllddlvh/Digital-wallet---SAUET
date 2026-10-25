@@ -1,1 +1,1201 @@
-{"openapi":"3.1.0","info":{"title":"Digital Wallet API","description":"RESTful API specification for Phase 1 of Digital Wallet system (SA UET)","contact":{"name":"SA UET Digital Wallet Team"},"version":"1.0.0"},"servers":[{"url":"http://localhost:8080","description":"Generated server url"}],"security":[{"bearerAuth":[]}],"tags":[{"name":"Authentication","description":"Endpoints for user registration and authentication"},{"name":"Transactions","description":"Endpoints for topup, withdraw, transfer, and transaction history"},{"name":"Wallet","description":"Endpoints for managing digital wallet"},{"name":"Linked Banks","description":"Endpoints for linking, listing, and unlinking bank accounts"}],"paths":{"/api/v1/transactions/withdraw":{"post":{"tags":["Transactions"],"summary":"Withdraw money","description":"Transfers money from wallet to linked bank account","operationId":"withdraw","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/WithdrawRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseTransactionResponse"}}}}},"security":[{"bearerAuth":[]}]}},"/api/v1/transactions/transfer":{"post":{"tags":["Transactions"],"summary":"Transfer money","description":"Transfers money from caller's wallet to another wallet by wallet number","operationId":"transfer","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TransferRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseTransactionResponse"}}}}},"security":[{"bearerAuth":[]}]}},"/api/v1/transactions/topup":{"post":{"tags":["Transactions"],"summary":"Topup wallet","description":"Transfers money from linked bank account to wallet","operationId":"topup","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/TopupRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseTransactionResponse"}}}}},"security":[{"bearerAuth":[]}]}},"/api/v1/linked-banks":{"get":{"tags":["Linked Banks"],"summary":"Get linked bank accounts","description":"Returns active linked bank accounts for current user's wallet","operationId":"getLinkedBanks","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseListLinkedBankResponse"}}}}},"security":[{"bearerAuth":[]}]},"post":{"tags":["Linked Banks"],"summary":"Link a new bank account","description":"Links a bank account to the authenticated user's wallet","operationId":"linkBank","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LinkBankRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseLinkedBankResponse"}}}}},"security":[{"bearerAuth":[]}]}},"/api/v1/auth/register":{"post":{"tags":["Authentication"],"summary":"Register a new user account","description":"Registers user and automatically provisions a wallet","operationId":"register","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/RegisterRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseUserResponse"}}}}}}},"/api/v1/auth/login":{"post":{"tags":["Authentication"],"summary":"User login","description":"Authenticates credentials and returns a Bearer JWT access token","operationId":"login","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginRequest"}}},"required":true},"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseAuthResponse"}}}}}}},"/api/v1/wallets/me":{"get":{"tags":["Wallet"],"summary":"Get current user's wallet","description":"Retrieves wallet details and current balance for the authenticated user","operationId":"getMyWallet","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseWalletResponse"}}}}},"security":[{"bearerAuth":[]}]}},"/api/v1/transactions":{"get":{"tags":["Transactions"],"summary":"Get transaction history","description":"Retrieves all inbound and outbound transactions for the current user's wallet","operationId":"getTransactions","responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseListTransactionResponse"}}}}},"security":[{"bearerAuth":[]}]}},"/api/v1/linked-banks/{id}":{"delete":{"tags":["Linked Banks"],"summary":"Unlink bank account","description":"Soft-deletes a linked bank account by setting status to UNLINKED","operationId":"unlinkBank","parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"integer","format":"int64"}}],"responses":{"200":{"description":"OK","content":{"*/*":{"schema":{"$ref":"#/components/schemas/ApiResponseVoid"}}}}},"security":[{"bearerAuth":[]}]}}},"components":{"schemas":{"WithdrawRequest":{"type":"object","properties":{"linkedBankAccountId":{"type":"integer","format":"int64"},"amount":{"type":"integer","format":"int64","minimum":1},"description":{"type":"string","maxLength":255,"minLength":0}},"required":["amount","linkedBankAccountId"]},"ApiResponseTransactionResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"$ref":"#/components/schemas/TransactionResponse"}}},"TransactionResponse":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"referenceCode":{"type":"string"},"type":{"type":"string"},"sourceWalletId":{"type":"integer","format":"int64"},"targetWalletId":{"type":"integer","format":"int64"},"linkedBankAccountId":{"type":"integer","format":"int64"},"amount":{"type":"integer","format":"int64"},"description":{"type":"string"},"createdAt":{"type":"string","format":"date-time"}}},"TransferRequest":{"type":"object","properties":{"targetWalletNumber":{"type":"string","minLength":1},"amount":{"type":"integer","format":"int64","minimum":1},"description":{"type":"string","maxLength":255,"minLength":0}},"required":["amount","targetWalletNumber"]},"TopupRequest":{"type":"object","properties":{"linkedBankAccountId":{"type":"integer","format":"int64"},"amount":{"type":"integer","format":"int64","minimum":1},"description":{"type":"string","maxLength":255,"minLength":0}},"required":["amount","linkedBankAccountId"]},"LinkBankRequest":{"type":"object","properties":{"bankCode":{"type":"string","maxLength":20,"minLength":0},"bankName":{"type":"string","maxLength":100,"minLength":0},"accountNumber":{"type":"string","maxLength":50,"minLength":0},"holderName":{"type":"string","maxLength":100,"minLength":0}},"required":["accountNumber","bankCode","bankName","holderName"]},"ApiResponseLinkedBankResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"$ref":"#/components/schemas/LinkedBankResponse"}}},"LinkedBankResponse":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"walletId":{"type":"integer","format":"int64"},"bankCode":{"type":"string"},"bankName":{"type":"string"},"accountNumberMasked":{"type":"string"},"holderName":{"type":"string"},"status":{"type":"string"},"linkedAt":{"type":"string","format":"date-time"},"unlinkedAt":{"type":"string","format":"date-time"}}},"RegisterRequest":{"type":"object","properties":{"username":{"type":"string","maxLength":50,"minLength":0},"password":{"type":"string","maxLength":100,"minLength":6},"fullName":{"type":"string","maxLength":100,"minLength":0},"email":{"type":"string","format":"email","maxLength":100,"minLength":0}},"required":["email","fullName","password","username"]},"ApiResponseUserResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"$ref":"#/components/schemas/UserResponse"}}},"UserResponse":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"username":{"type":"string"},"fullName":{"type":"string"},"email":{"type":"string"},"role":{"type":"string"},"createdAt":{"type":"string","format":"date-time"}}},"LoginRequest":{"type":"object","properties":{"username":{"type":"string","minLength":1},"password":{"type":"string","minLength":1}},"required":["password","username"]},"ApiResponseAuthResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"$ref":"#/components/schemas/AuthResponse"}}},"AuthResponse":{"type":"object","properties":{"accessToken":{"type":"string"},"tokenType":{"type":"string"},"expiresIn":{"type":"integer","format":"int64"}}},"ApiResponseWalletResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"$ref":"#/components/schemas/WalletResponse"}}},"WalletResponse":{"type":"object","properties":{"id":{"type":"integer","format":"int64"},"userId":{"type":"integer","format":"int64"},"walletNumber":{"type":"string"},"balance":{"type":"integer","format":"int64"},"status":{"type":"string"},"createdAt":{"type":"string","format":"date-time"},"updatedAt":{"type":"string","format":"date-time"}}},"ApiResponseListTransactionResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"type":"array","items":{"$ref":"#/components/schemas/TransactionResponse"}}}},"ApiResponseListLinkedBankResponse":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{"type":"array","items":{"$ref":"#/components/schemas/LinkedBankResponse"}}}},"ApiResponseVoid":{"type":"object","properties":{"timestamp":{"type":"string","format":"date-time"},"status":{"type":"integer","format":"int32"},"message":{"type":"string"},"data":{}}}},"securitySchemes":{"bearerAuth":{"type":"http","name":"bearerAuth","scheme":"bearer","bearerFormat":"JWT"}}}}
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Digital Wallet API",
+        "description": "RESTful API specification for Phase 1 of Digital Wallet system (SA UET)",
+        "contact": {
+            "name": "SA UET Digital Wallet Team"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080",
+            "description": "Generated server url"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Endpoints for user registration and authentication"
+        },
+        {
+            "name": "Transactions",
+            "description": "Endpoints for topup, withdraw, transfer, and transaction history"
+        },
+        {
+            "name": "Wallet",
+            "description": "Endpoints for managing digital wallet"
+        },
+        {
+            "name": "Linked Banks",
+            "description": "Endpoints for linking, listing, and unlinking bank accounts"
+        }
+    ],
+    "paths": {
+        "/api/v1/transactions/withdraw": {
+            "post": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Withdraw money",
+                "description": "Transfers money from wallet to linked bank account",
+                "operationId": "withdraw",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WithdrawRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Withdraw successful",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTransactionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed / Wallet not active / Insufficient balance",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wallet or linked bank account not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/transactions/transfer": {
+            "post": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Transfer money",
+                "description": "Transfers money from caller's wallet to another wallet by wallet number",
+                "operationId": "transfer",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TransferRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transfer successful",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTransactionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed / Wallet not active / Insufficient balance",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Source or target wallet not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/transactions/topup": {
+            "post": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Topup wallet",
+                "description": "Transfers money from linked bank account to wallet",
+                "operationId": "topup",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TopupRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Topup successful",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseTransactionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed / Wallet not active",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wallet or linked bank account not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/linked-banks": {
+            "get": {
+                "tags": [
+                    "Linked Banks"
+                ],
+                "summary": "Get linked bank accounts",
+                "description": "Returns active linked bank accounts for current user's wallet",
+                "operationId": "getLinkedBanks",
+                "responses": {
+                    "200": {
+                        "description": "Linked bank accounts retrieved",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseListLinkedBankResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wallet not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Linked Banks"
+                ],
+                "summary": "Link a new bank account",
+                "description": "Links a bank account to the authenticated user's wallet",
+                "operationId": "linkBank",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LinkBankRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "Bank account linked successfully",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseLinkedBankResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wallet not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user account",
+                "description": "Registers user and automatically provisions a wallet",
+                "operationId": "register",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseUserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Username or email already exists",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "User login",
+                "description": "Authenticates credentials and returns a Bearer JWT access token",
+                "operationId": "login",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseAuthResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid username or password",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wallets/me": {
+            "get": {
+                "tags": [
+                    "Wallet"
+                ],
+                "summary": "Get current user's wallet",
+                "description": "Retrieves wallet details and current balance for the authenticated user",
+                "operationId": "getMyWallet",
+                "responses": {
+                    "200": {
+                        "description": "Wallet retrieved successfully",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseWalletResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated – invalid or missing JWT",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wallet not found for current user",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/transactions": {
+            "get": {
+                "tags": [
+                    "Transactions"
+                ],
+                "summary": "Get transaction history",
+                "description": "Retrieves all inbound and outbound transactions for the current user's wallet",
+                "operationId": "getTransactions",
+                "responses": {
+                    "200": {
+                        "description": "Transaction history retrieved",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseListTransactionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wallet not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/linked-banks/{id}": {
+            "delete": {
+                "tags": [
+                    "Linked Banks"
+                ],
+                "summary": "Unlink bank account",
+                "description": "Soft-deletes a linked bank account by setting status to UNLINKED",
+                "operationId": "unlinkBank",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bank account unlinked",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiResponseVoid"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Linked bank account not found",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "WithdrawRequest": {
+                "type": "object",
+                "properties": {
+                    "linkedBankAccountId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "amount": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "amount",
+                    "linkedBankAccountId"
+                ]
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "error": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "ApiResponseTransactionResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/TransactionResponse"
+                    }
+                }
+            },
+            "TransactionResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "referenceCode": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "sourceWalletId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "targetWalletId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "linkedBankAccountId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "amount": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "TransferRequest": {
+                "type": "object",
+                "properties": {
+                    "targetWalletNumber": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "amount": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "amount",
+                    "targetWalletNumber"
+                ]
+            },
+            "TopupRequest": {
+                "type": "object",
+                "properties": {
+                    "linkedBankAccountId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "amount": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 1
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "amount",
+                    "linkedBankAccountId"
+                ]
+            },
+            "LinkBankRequest": {
+                "type": "object",
+                "properties": {
+                    "bankCode": {
+                        "type": "string",
+                        "maxLength": 20,
+                        "minLength": 0
+                    },
+                    "bankName": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 0
+                    },
+                    "accountNumber": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "minLength": 0
+                    },
+                    "holderName": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "accountNumber",
+                    "bankCode",
+                    "bankName",
+                    "holderName"
+                ]
+            },
+            "ApiResponseLinkedBankResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/LinkedBankResponse"
+                    }
+                }
+            },
+            "LinkedBankResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "walletId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "bankCode": {
+                        "type": "string"
+                    },
+                    "bankName": {
+                        "type": "string"
+                    },
+                    "accountNumberMasked": {
+                        "type": "string"
+                    },
+                    "holderName": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "linkedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "unlinkedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "RegisterRequest": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "minLength": 0
+                    },
+                    "password": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 6
+                    },
+                    "fullName": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 0
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 100,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "email",
+                    "fullName",
+                    "password",
+                    "username"
+                ]
+            },
+            "ApiResponseUserResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/UserResponse"
+                    }
+                }
+            },
+            "UserResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "username": {
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "password",
+                    "username"
+                ]
+            },
+            "ApiResponseAuthResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/AuthResponse"
+                    }
+                }
+            },
+            "AuthResponse": {
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string"
+                    },
+                    "tokenType": {
+                        "type": "string"
+                    },
+                    "expiresIn": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "ApiResponseWalletResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/WalletResponse"
+                    }
+                }
+            },
+            "WalletResponse": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "userId": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "walletNumber": {
+                        "type": "string"
+                    },
+                    "balance": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ApiResponseListTransactionResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TransactionResponse"
+                        }
+                    }
+                }
+            },
+            "ApiResponseListLinkedBankResponse": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LinkedBankResponse"
+                        }
+                    }
+                }
+            },
+            "ApiResponseVoid": {
+                "type": "object",
+                "properties": {
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {}
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "name": "bearerAuth",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}
