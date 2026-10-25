@@ -12,7 +12,7 @@ export class ApiClient {
     this.monitor = monitor;
   }
 
-  _request(method, path, { token, body, requestName, expected }) {
+  _request(method, path, { token, body, requestName, expected, state }) {
     const url = `${this.baseUrl}${path}`;
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -25,27 +25,37 @@ export class ApiClient {
       error = e && e.message ? e.message : String(e);
     }
 
-    const outcome = this.monitor.recordRequest({
-      request: requestName, expected, actual, error,
-    });
-
-    // k6 check để summary của k6 phản ánh được (network error → status 0 → fail).
-    const resForCheck = res ?? { status: 0 };
-    check(resForCheck, {
-      [`${requestName}_status`]: (r) => expected.indexOf(r.status) >= 0,
-    });
-
     let parsedBody = null;
     if (res && res.body) {
       try { parsedBody = JSON.parse(res.body); } catch (_) { parsedBody = res.body; }
     }
 
+    // Detail: chỉ ghi khi failure (body hoặc message network error).
+    let detail = '';
+    const expectedIncludes = (v) => v !== null && v !== undefined && expected.indexOf(v) >= 0;
+    const isFailure = error || !expectedIncludes(actual);
+    if (isFailure) {
+      if (error) {
+        detail = error;
+      } else if (parsedBody !== null) {
+        detail = typeof parsedBody === 'string' ? parsedBody : JSON.stringify(parsedBody);
+      }
+    }
+
+    this.monitor.recordRequest({
+      request: requestName, state, expected, actual, error, detail,
+    });
+
+    const resForCheck = res ?? { status: 0 };
+    check(resForCheck, {
+      [`${requestName}_status`]: (r) => expected.indexOf(r.status) >= 0,
+    });
+
     return {
       status: actual,
-      body: parsedBody,
+      body:   parsedBody,
       durationMs: res ? res.timings.duration : null,
       error,
-      outcome,
     };
   }
 

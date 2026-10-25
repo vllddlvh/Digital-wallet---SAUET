@@ -22,6 +22,7 @@
 #              <out>/dump_summary.json
 set -euo pipefail
 source "$(dirname "$0")/_common.sh"
+trap_errors
 
 MODE=""
 FROM_CSV=""

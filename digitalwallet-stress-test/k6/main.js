@@ -61,22 +61,31 @@ export function setup() {
     });
   }
 
-  // 1) Register batch (parallel).
+  const JSON_HDR = { 'Content-Type': 'application/json' };
+
+  // 1) Register batch (parallel). `headers` trong object form của http.batch
+  // phải nằm trong `params`, không phải top-level.
   const regs = http.batch(recv.map((w) => ({
     method: 'POST',
     url: `${BASE_URL}/api/v1/auth/register`,
     body: JSON.stringify(w),
-    headers: { 'Content-Type': 'application/json' },
+    params: { headers: JSON_HDR },
   })));
-  const regBad = regs.filter((r) => r.status !== 201).length;
-  if (regBad > 0) throw new Error(`setup: ${regBad}/${regs.length} register failed`);
+  const regBad = regs.filter((r) => r.status !== 201);
+  if (regBad.length > 0) {
+    for (let i = 0; i < Math.min(3, regBad.length); i++) {
+      const r = regBad[i];
+      console.error(`[setup] register failed #${i}: status=${r.status} body=${(r.body || '').toString().slice(0, 300)}`);
+    }
+    throw new Error(`setup: ${regBad.length}/${regs.length} register failed`);
+  }
 
   // 2) Login batch.
   const logins = http.batch(recv.map((w) => ({
     method: 'POST',
     url: `${BASE_URL}/api/v1/auth/login`,
     body: JSON.stringify({ username: w.username, password: w.password }),
-    headers: { 'Content-Type': 'application/json' },
+    params: { headers: JSON_HDR },
   })));
   const tokens = logins.map((r) => {
     try { return JSON.parse(r.body).data.accessToken; } catch (_) { return null; }
@@ -87,14 +96,17 @@ export function setup() {
   const walletRes = http.batch(tokens.map((t) => ({
     method: 'GET',
     url: `${BASE_URL}/api/v1/wallets/me`,
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${t}` },
+    params: { headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${t}`,
+    } },
   })));
   const walletNumbers = walletRes.map((r) => {
     try { return JSON.parse(r.body).data.walletNumber; } catch (_) { return null; }
   });
   if (walletNumbers.some((w) => !w)) throw new Error('setup: some getWallet failed');
 
-  // 4) Smoke probe: 400/401/404 chỉ chạy cho smoke, dùng token của recv[0].
+  // 4) Smoke probe: 400/401/404.
   if (cfg.profile.name === 'smoke' && tokens.length > 0) {
     api.probeRegisterInvalid();
     api.probeMissingAuth();
@@ -115,45 +127,48 @@ export function setup() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function (data) {
-  if (__ITER > 0) {
-    // Session đã chạy xong (test đã hết). Sleep dài để VU idles tới gracefulStop.
-    sleep(3600);
-    return;
-  }
+  if (__ITER > 0) { sleep(3600); return; }
 
-  const rng    = new Random();
-  const dataF  = new DataFactory(data.runId, rng);
-  const api    = new ApiClient(BASE_URL, monitor);
-  const mdp    = new MdpEngine(cfg.mdp, rng);
+  const rng   = new Random();
+  const dataF = new DataFactory(data.runId, rng);
+  const api   = new ApiClient(BASE_URL, monitor);
+  const mdp   = new MdpEngine(cfg.mdp, rng);
 
   let accCounter = 0;
   const makeAccount = () => new Account({
-    seq: `vu${__VU}_${++accCounter}`,
-    data: dataF, api, mdp, monitor, rng, cfg,
+    seq: `vu${__VU}_${++accCounter}`, data: dataF, api, mdp, monitor, rng, cfg,
   });
 
-  // Đăng ký account đầu tiên; nếu 3 lần liên tiếp fail → bỏ session VU này
-  // (Register đã được ghi vào request_outcome, nên vẫn còn dấu vết).
-  let account = null;
-  for (let i = 0; i < 3; i++) {
-    account = makeAccount();
-    account.register();
-    if (account._registered) break;
-    sleep(1);
-  }
-  if (!account || !account._registered) return;
+  // Bootstrap: register → login → linkBank(1). Log qua ApiClient với state='bootstrap'.
+  const bootstrap = (acc) => {
+    acc._currentState = 'bootstrap';
+    acc.register();
+    if (!acc._registered) return false;
+    acc.login();
+    if (!acc.hasToken()) return false;
+    acc.linkBank();
+    return true;
+  };
 
-  let currentZone = 'auth';
-  const startTime    = data.startTime;
-  const testEndTime  = data.testEndTime;
+  let account = makeAccount();
+  if (!bootstrap(account)) {
+    for (let i = 0; i < 3; i++) {
+      sleep(1);
+      account = makeAccount();
+      if (bootstrap(account)) break;
+    }
+    if (!account._registered || !account.hasToken()) return;
+  }
+
+  let currentZone   = 'auth';
+  const startTime   = data.startTime;
+  const testEndTime = data.testEndTime;
 
   while (Date.now() < testEndTime) {
-    // Replacement khi account chết vì invariant.
     if (!account.isAlive()) {
       account = makeAccount();
-      account.register();
+      if (!bootstrap(account)) break;
       currentZone = 'auth';
-      if (!account._registered) break;
       continue;
     }
 
@@ -162,7 +177,7 @@ export default function (data) {
     const actions  = mdp.chooseActions(nextZone, account);
 
     for (const action of actions) {
-      dispatch(account, action, data.receivingWalletNumbers);
+      dispatch(account, action, nextZone, data.receivingWalletNumbers);
     }
     currentZone = nextZone;
 
@@ -171,22 +186,18 @@ export default function (data) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// dispatch
-// ─────────────────────────────────────────────────────────────────────────────
-
-function dispatch(account, action, receivingWalletNumbers) {
+function dispatch(account, action, state, receivingWalletNumbers) {
+  account._currentState = state;   // ← gán trước khi gọi
   switch (action) {
-    case 'login':         return account.login();
-    case 'logout':        return account.logout();
-    case 'viewBalance':   return account.getWallet();
-    case 'viewAccounts':  return account.getLinkedBanks();
-    case 'viewHistory':   return account.getHistory();
-    case 'linkBank':      return account.linkBank();
-    case 'topUp':         return account.topUp();
-    case 'transfer':      return account.transfer(receivingWalletNumbers);
-    case 'withdraw':      return account.withdraw();
-    default:
-      throw new Error(`[main] unknown action: "${action}"`);
+    case 'login':        return account.login();
+    case 'logout':       return account.logout();  // không tạo request, không log
+    case 'viewBalance':  return account.getWallet();
+    case 'viewAccounts': return account.getLinkedBanks();
+    case 'viewHistory':  return account.getHistory();
+    case 'linkBank':     return account.linkBank();
+    case 'topUp':        return account.topUp();
+    case 'transfer':     return account.transfer(receivingWalletNumbers);
+    case 'withdraw':     return account.withdraw();
+    default: throw new Error(`[main] unknown action: "${action}"`);
   }
 }

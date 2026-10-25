@@ -43,6 +43,7 @@ export class Account {
 
     // MDP state
     this.currentZone = 'auth';
+    this._currentState = 'auth';
     this.mustTopUp = false;
     this.isDead = false;
 
@@ -60,20 +61,18 @@ export class Account {
   register() {
     if (this._registered) throw new Error('register called twice');
     const res = this.api.register({
-      username: this.username,
-      password: this.password,
-      fullName: this.fullName,
-      email: this.email,
-    });
+      username: this.username, password: this.password,
+      fullName: this.fullName, email: this.email,
+    }, this._currentState);
     this._updateRtt(res);
     if (res.status === 201) this._registered = true;
     return res;
   }
 
   login() {
-    const res = this.api.login({ username: this.username, password: this.password });
+    const res = this.api.login({ username: this.username, password: this.password }, this._currentState);
     this._updateRtt(res);
-    if (res.status === 200 && res.body && res.body.data && res.body.data.accessToken) {
+    if (res.status === 200 && res.body?.data?.accessToken) {
       this.token = res.body.data.accessToken;
       const muMs = this.cfg.profile.tokenTimeout.muSec * 1000;
       const j = this.cfg.mdp.tokenTimeoutJitter;
@@ -147,56 +146,78 @@ export class Account {
   }
 
   topUp(amount) {
-    if (this.linkedBanks.length === 0) throw new Error('topUp: no linked banks');
+    if (this.linkedBanks.length === 0) return null;
     const amt = amount ?? this._randomAmount();
     const bank = this.linkedBanks[0];
     const res = this.api.topUp(this.token, {
-      linkedBankAccountId: bank.id,
-      amount: amt,
-      description: `topup_${this.seq}`,
-    });
+      linkedBankAccountId: bank.id, amount: amt, description: `topup_${this.seq}`,
+    }, [200], this._currentState);
     this._updateRtt(res);
     if (res.status === 401) { this.logout(); return res; }
-
-    if (res.status === 200) this.knownBalance += amt;
-    // Một lần cố gắng TopUp là đủ để clear mustTopUp (200 hoặc 400 validation).
-    if (res.status === 200 || res.status === 400) this.mustTopUp = false;
+    if (res.status === 200) {
+      this.knownBalance += amt;
+      this.mustTopUp = false;   // clear cờ
+    }
     return res;
   }
 
   transfer(receivingWalletNumbers, amount) {
+    const d = this._decideAmount(amount);
+    if (d.replaceWithTopUp) {
+      this.mustTopUp = true;          // bật cờ
+      return this.topUp();            // thay action hiện tại bằng topUp
+    }
     const target = this.rng.pickOne(receivingWalletNumbers);
-    const { amt, isOverdraw } = this._decideAmount(amount);
-    const expected = isOverdraw ? [400] : [200];
+    const expected = d.isOverdraw ? [400] : [200];
     const res = this.api.transfer(this.token, {
-      targetWalletNumber: target,
-      amount: amt,
-      description: `transfer_${this.seq}`,
-    }, expected);
+      targetWalletNumber: target, amount: d.amt, description: `transfer_${this.seq}`,
+    }, expected, this._currentState);
     this._updateRtt(res);
     if (res.status === 401) { this.logout(); return res; }
-
-    if (res.status === 200) this.knownBalance -= amt;
-    else if (res.status === 400 && isOverdraw) this.mustTopUp = true;
+    if (res.status === 200) this.knownBalance -= d.amt;
+    else if (res.status === 400 && d.isOverdraw) this.mustTopUp = true;
     return res;
   }
 
   withdraw(amount) {
-    if (this.linkedBanks.length === 0) throw new Error('withdraw: no linked banks');
+    if (this.linkedBanks.length === 0) return null;
+    const d = this._decideAmount(amount);
+    if (d.replaceWithTopUp) {
+      this.mustTopUp = true;
+      return this.topUp();
+    }
     const bank = this.linkedBanks[0];
-    const { amt, isOverdraw } = this._decideAmount(amount);
-    const expected = isOverdraw ? [400] : [200];
+    const expected = d.isOverdraw ? [400] : [200];
     const res = this.api.withdraw(this.token, {
-      linkedBankAccountId: bank.id,
-      amount: amt,
-      description: `withdraw_${this.seq}`,
-    }, expected);
+      linkedBankAccountId: bank.id, amount: d.amt, description: `withdraw_${this.seq}`,
+    }, expected, this._currentState);
     this._updateRtt(res);
     if (res.status === 401) { this.logout(); return res; }
-
-    if (res.status === 200) this.knownBalance -= amt;
-    else if (res.status === 400 && isOverdraw) this.mustTopUp = true;
+    if (res.status === 200) this.knownBalance -= d.amt;
+    else if (res.status === 400 && d.isOverdraw) this.mustTopUp = true;
     return res;
+  }
+
+  _decideAmount(explicit) {
+    if (explicit !== undefined) {
+      return { amt: explicit, isOverdraw: explicit > this.knownBalance };
+    }
+    const m = this.cfg.mdp.money;
+    const deliberate = this.rng.bernoulli(this.cfg.mdp.insufficientProb);
+
+    if (deliberate) {
+      const extra = this.rng.int(1, m.overflowExtra);
+      return { amt: this.knownBalance + extra, isOverdraw: true };
+    }
+
+    // Not deliberate + không đủ → preventive topup (không gửi request fail vô ích)
+    if (this.knownBalance < m.minAmount) {
+      return { replaceWithTopUp: true };
+    }
+
+    const maxValid = Math.min(m.maxAmount, this.knownBalance);
+    const amt = this.rng.int(m.minAmount, maxValid);
+    return { amt, isOverdraw: false };
   }
 
   // ── Smoke probe: 3 định dạng exception ───────────────────────────────────
@@ -246,28 +267,6 @@ export class Account {
     return this.rng.int(this.cfg.mdp.money.minAmount, this.cfg.mdp.money.maxAmount);
   }
 
-  _decideAmount(explicit) {
-    if (explicit !== undefined) {
-      return { amt: explicit, isOverdraw: explicit > this.knownBalance };
-    }
-    const m = this.cfg.mdp.money;
-    const minBal = m.minAmount;
-
-    // Nếu chưa kịp nạp (knownBalance < min) → buộc overdraw.
-    const forceOverdraw = this.knownBalance < minBal;
-    const deliberate = this.rng.bernoulli(this.cfg.mdp.insufficientProb);
-
-    if (forceOverdraw || deliberate) {
-      const extra = this.rng.int(1, m.overflowExtra);
-      const amt = Math.max(this.knownBalance + extra, minBal);
-      return { amt, isOverdraw: true };
-    }
-
-    const maxValid = Math.min(m.maxAmount, this.knownBalance);
-    const amt = this.rng.int(m.minAmount, maxValid);
-    return { amt, isOverdraw: false };
-  }
-
   _applyInvariantCheck(serverBalance) {
     if (!this.balanceSynced) {
       this.knownBalance = serverBalance;
@@ -276,12 +275,8 @@ export class Account {
     }
     if (this.knownBalance !== serverBalance) {
       this.monitor.recordInvariantViolation({
-        accountSeq: this.seq,
-        username: this.username,
-        walletId: this.walletId,
-        field: 'balance',
-        client: this.knownBalance,
-        server: serverBalance,
+        accountSeq: this.seq, username: this.username, walletId: this.walletId,
+        field: 'balance', client: this.knownBalance, server: serverBalance,
       });
       this.isDead = true;
     } else {

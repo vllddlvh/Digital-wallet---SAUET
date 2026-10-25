@@ -35,21 +35,16 @@ export class MdpEngine {
   }
 
   _chooseTransactionAction(account) {
-    // (1) Bắt buộc TopUp sau overdraw.
-    if (account.mustTopUp) return 'topUp';
+    // (0) mustTopUp (từ 400 overdraw lần trước) → force topup
+    if (account.mustTopUp && account.linkedBanks.length > 0) return 'topUp';
 
+    // (1) Weighted choice có ràng buộc
     const w = { ...this.transactionWeights };
-
-    // (2) LinkBank giảm tuyến tính → 0 khi cạn K.
     w.linkBank = (w.linkBank || 0) * (account.banksAvailableCount / account.K);
-
-    // (3) TopUp/Withdraw cần ≥1 bank.
     if (account.linkedBanks.length === 0) {
       w.topUp = 0;
       w.withdraw = 0;
     }
-
-    // Transfer luôn có trọng số gốc > 0 → không bao giờ rỗng.
     return this._pickFromWeights(w);
   }
 
