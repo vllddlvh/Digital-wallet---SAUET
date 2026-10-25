@@ -1,0 +1,12 @@
+{
+  "name": "smoke",
+  "_description": "Smoke: 5 accounts, 5 RPS, 3 min. Cover all endpoints + >=2 exception formats, verify MDP mechanisms (link-bank cascade, forced TopUp after overdraw, token timeout).",
+
+  "accounts": 5,
+  "targetRps": 5,
+  "activationDurationSec": 10,
+  "durationSec": 180,
+
+  "receivingWallets": 10,
+  "tokenTimeout": { "muSec": 20 }
+}

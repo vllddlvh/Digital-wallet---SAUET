@@ -1,0 +1,50 @@
+{
+  "_about": "MDP parameters per testplan.md §2.2 and §3. Auth zone is deterministic (drop-token-if-any -> Login) and has no weighted actions, so it is not listed under zones.",
+
+  "zones": {
+    "confirmation": {
+      "_comment": "Action weights when entering the Confirmation zone.",
+      "actions": {
+        "viewBalance": 0.50,
+        "viewAccounts": 0.30,
+        "viewHistory": 0.20
+      }
+    },
+    "transaction": {
+      "_comment": "Initial action weights. LinkBank fades linearly to 0 as banks are linked; the lost weight is shifted to Transfer (testplan §3). Once all K banks are linked, LinkBank is excluded.",
+      "actions": {
+        "linkBank": 0.20,
+        "topUp": 0.25,
+        "transfer": 0.40,
+        "withdraw": 0.15
+      }
+    }
+  },
+
+  "transitions": {
+    "_comment": "Zone transition weights. From Auth, the only edge is -> Confirmation (Login). From Confirmation, only -> Transaction. From Transaction: stay 0.60 / return 0.40.",
+    "authToConfirmation": 1.0,
+    "confirmationToTransaction": 1.0,
+    "transactionToTransaction": 0.60,
+    "transactionToConfirmation": 0.40
+  },
+
+  "linkedBanks": {
+    "_comment": "Per-account K ~ uniform integer [kMin, kMax]. LinkBank can be executed at most K times per account; lifetime cap, not reset by logout.",
+    "kMin": 5,
+    "kMax": 10
+  },
+
+  "money": {
+    "_comment": "Valid amount ~ uniform int in [minAmount, maxAmount] (VND). Deliberate overdraw amount = knownBalance + rand(1, overflowExtra), lowered to minAmount if knownBalance is too small.",
+    "minAmount": 1000,
+    "maxAmount": 100000,
+    "overflowExtra": 10000
+  },
+
+  "tokenTimeoutJitterPercent": 0.30,
+  "_tokenTimeoutJitterComment": "JWT T ~ Normal(mu, jitter*mu) clipped to [mu(1-jitter), mu(1+jitter)]. mu is per-profile.",
+
+  "insufficientBalanceProbability": 0.10,
+  "_insufficientBalanceComment": "Per Transfer/Withdraw call, chance of deliberately exceeding knownBalance. Next action in Transaction zone is forced to TopUp (testplan §3)."
+}

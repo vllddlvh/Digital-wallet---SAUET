@@ -1,0 +1,12 @@
+{
+  "name": "load",
+  "_description": "Load baseline: 200 accounts, 100 RPS, 32 min (2 min activation + 10 min hold). Reference for later comparisons.",
+
+  "accounts": 200,
+  "targetRps": 100,
+  "activationDurationSec": 120,
+  "durationSec": 600,
+
+  "receivingWallets": 50,
+  "tokenTimeout": { "muSec": 300 }
+}

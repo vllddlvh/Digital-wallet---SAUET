@@ -1,0 +1,26 @@
+{
+  "name": "stress",
+  "_description": "Stress: 10 stages, +200 accounts & +100 RPS per stage, 3 min/stage, 30 min total. Peak: 2000 accounts, 1000 RPS.",
+
+  "stages": [
+    { "accounts": 200,  "targetRps": 100,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 400,  "targetRps": 200,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 600,  "targetRps": 300,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 800,  "targetRps": 400,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 1000, "targetRps": 500,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 1200, "targetRps": 600,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 1400, "targetRps": 700,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 1600, "targetRps": 800,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 1800, "targetRps": 900,  "activationDurationSec": 60, "holdDurationSec": 120 },
+    { "accounts": 2000, "targetRps": 1000, "activationDurationSec": 60, "holdDurationSec": 120 }
+  ],
+
+  "receivingWallets": 100,
+  "tokenTimeout": { "muSec": 300 },
+
+  "stopConditions": {
+    "_comment": "abortOnFail=true is hardcoded (see k6/lib/metrics.js); only threshold and delayAbortEval vary. Cumulative rate, evaluated after delayAbortEval.",
+    "threshold": "rate<0.5",
+    "delayAbortEval": "120s"
+  }
+}
