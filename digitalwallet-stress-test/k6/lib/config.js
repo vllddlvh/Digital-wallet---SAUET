@@ -4,16 +4,19 @@ const PROFILES = {
   stress: '../../config/profiles/stress.json',
 };
 
-const loadJson = (path) => JSON.parse(open(path));
+const loadJson = (url) => {
+  const p = url.startsWith('file://') ? url.slice(7) : url;
+  return JSON.parse(open(p));
+};
 const EPS = 1e-6;
 const near = (a, b) => Math.abs(a - b) <= EPS;
 const dataKeys = (obj) => Object.keys(obj).filter((k) => !k.startsWith('_'));
 
 export function loadConfig(profileName) {
-  const mdpRaw = loadJson('../../config/mdp.json');
-  const path = PROFILES[profileName];
-  if (!path) throw new Error(`Unknown profile: "${profileName}" (smoke|load|stress)`);
-  return new Config(mdpRaw, loadJson(path));
+  const mdpRaw = loadJson(import.meta.resolve('../../config/mdp.json'));
+  const profileUrl = PROFILES[profileName];
+  if (!profileUrl) throw new Error(`Unknown profile: "${profileName}" (smoke|load|stress)`);
+  return new Config(mdpRaw, loadJson(import.meta.resolve(profileUrl)));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -78,6 +78,7 @@ def main():
     env['BASE_URL'] = args.base_url
 
     k6_exit = -1
+
     try:
         proc = subprocess.run(
             ['k6', 'run',
@@ -93,6 +94,14 @@ def main():
         sampler.send_signal(signal.SIGTERM)
         try: sampler.wait(timeout=10)
         except subprocess.TimeoutExpired: sampler.kill()
+
+    if k6_exit not in (0, 99):
+        log(f'WARNING: k6 exit={k6_exit} (không phải 0 hay 99)')
+        if not os.path.exists(k6_csv):
+            log(f'k6_raw.csv KHÔNG được tạo. Bỏ qua dump. Xem {k6_summary} và /tmp/app.log.')
+            sampler.terminate()
+            sys.exit(1)
+        log(f'k6_raw.csv tồn tại ({os.path.getsize(k6_csv)} bytes), tiếp tục dump.')
 
     # 6. Grace + dump DB
     log('grace 5s trước khi dump (in-flight requests)')

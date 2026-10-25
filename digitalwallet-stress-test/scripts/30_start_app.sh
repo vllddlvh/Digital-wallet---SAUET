@@ -26,9 +26,24 @@ APP_PID=$!; echo "$APP_PID" > "$APP_PID_FILE"
 
 for i in $(seq 1 90); do
   kill -0 "$APP_PID" 2>/dev/null || { echo "APP DIED"; tail -60 "$APP_LOG"; exit 1; }
-  code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "localhost:${APP_PORT}/api/v1/auth/login" \
-         -H 'Content-Type: application/json' -d '{"username":"x","password":"x"}')
-  [ "$code" != "000" ] && { log "UP after ~$((i*2))s, login probe -> HTTP $code"; break; }
+  code=$(curl -s -o /dev/null -w '%{http_code}' \
+         -X POST "localhost:${APP_PORT}/api/v1/auth/login" \
+         -H 'Content-Type: application/json' \
+         -d '{"username":"x","password":"x"}' \
+         2>/dev/null) || code="000"
+  if [ "$code" != "000" ]; then
+    log "UP after ~$((i*2))s, login probe -> HTTP $code"
+    READY=1
+    break
+  fi
   sleep 2
 done
+
+
+if [ "$READY" -ne 1 ]; then
+  echo "APP không sẵn sàng sau 180s"
+  tail -60 "$APP_LOG"
+  exit 1
+fi
+
 grep -iE "Started|ERROR|Exception" "$APP_LOG" | tail -10 || true
