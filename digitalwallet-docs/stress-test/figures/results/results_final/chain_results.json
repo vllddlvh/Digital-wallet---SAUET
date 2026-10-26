@@ -1,0 +1,50 @@
+[
+  {
+    "profile": "smoke",
+    "out_dir": "/kaggle/working/results/smoke_20261025T152402",
+    "exit": 0,
+    "pass": true,
+    "reason": "ok",
+    "summary": {
+      "total_requests": 853,
+      "success": 852,
+      "failure": 1,
+      "violation": 0,
+      "success_rate": 0.9988276670574443,
+      "failure_rate": 0.0011723329425556857,
+      "violation_rate": 0.0
+    }
+  },
+  {
+    "profile": "load",
+    "out_dir": "/kaggle/working/results/load_20261025T152726",
+    "exit": 0,
+    "pass": true,
+    "reason": "ok",
+    "summary": {
+      "total_requests": 55029,
+      "success": 54823,
+      "failure": 206,
+      "violation": 0,
+      "success_rate": 0.996256519289829,
+      "failure_rate": 0.0037434807101710006,
+      "violation_rate": 0.0
+    }
+  },
+  {
+    "profile": "stress",
+    "out_dir": "/kaggle/working/results/stress_20261025T153806",
+    "exit": 0,
+    "pass": true,
+    "reason": "ok",
+    "summary": {
+      "total_requests": 315555,
+      "success": 314436,
+      "failure": 1119,
+      "violation": 0,
+      "success_rate": 0.9964538669962447,
+      "failure_rate": 0.003546133003755288,
+      "violation_rate": 0.0
+    }
+  }
+]

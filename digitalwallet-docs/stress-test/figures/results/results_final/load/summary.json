@@ -1,0 +1,499 @@
+{
+  "total_requests": 55029,
+  "success": 54823,
+  "failure": 206,
+  "violation": 0,
+  "success_rate": 0.996256519289829,
+  "failure_rate": 0.0037434807101710006,
+  "violation_rate": 0.0,
+  "by_request": {
+    "register": {
+      "success": 200
+    },
+    "login": {
+      "success": 425
+    },
+    "linkBank": {
+      "success": 1556
+    },
+    "viewBalance": {
+      "success": 7867
+    },
+    "viewAccounts": {
+      "success": 4692
+    },
+    "topUp": {
+      "success": 14240
+    },
+    "viewHistory": {
+      "success": 3093
+    },
+    "transfer": {
+      "success": 16479,
+      "failure": 206
+    },
+    "withdraw": {
+      "success": 6271
+    }
+  },
+  "failures": [
+    {
+      "ts": 1792942114,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:28:34.614291479\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942126,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:28:46.545074155\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942133,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:28:53.49801952\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942140,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:00.646733325\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942148,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:08.213171234\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942157,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:17.075212443\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942157,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:17.314281192\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942158,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:18.212235517\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942170,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:30.080291546\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942171,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:31.513921873\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942180,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:40.999056417\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942182,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:42.955093088\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942188,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:48.97578899\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942190,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:50.276154487\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942190,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:50.374607343\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942191,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:51.03960293\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942192,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:52.417873394\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942195,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:55.803436209\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942196,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:56.769554876\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942197,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:29:57.68791326\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942203,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:03.851007165\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942205,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:05.96289739\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942211,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:11.270185294\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942211,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:11.37232893\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942215,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:15.748232142\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942227,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:27.845415621\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942232,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:32.801056929\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942233,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:33.112532342\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942233,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:33.536217307\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942234,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:34.271893013\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942236,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:36.48522404\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942237,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:37.5893503\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942237,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:37.77428406\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942239,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:39.218326304\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942243,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:43.669519157\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942251,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:51.134638745\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942252,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:52.388241837\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942256,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:56.006504192\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942256,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:56.2435638\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942257,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:30:57.389142678\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942262,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:02.934576671\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942263,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:03.054915602\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942268,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:08.773806298\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942270,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:10.919637284\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942283,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:23.013408028\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942284,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:24.756335875\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942287,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:27.992114877\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942289,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:29.880421761\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942290,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:30.191264458\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    },
+    {
+      "ts": 1792942292,
+      "state": "",
+      "request": "transfer",
+      "expected": "200",
+      "actual": "409",
+      "label": "failure",
+      "detail": "{\"timestamp\":\"2026-10-25T15:31:32.823248504\",\"status\":409,\"error\":\"Conflict\",\"message\":\"Concurrent transaction conflict. Please try again.\",\"path\":\"/api/v1/transactions/transfer\"}"
+    }
+  ],
+  "violations": [],
+  "db_dump": {
+    "mode": "violated",
+    "wallet_ids": [],
+    "violated_account_count": 0,
+    "transaction_count": 0,
+    "outputs": []
+  }
+}

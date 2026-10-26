@@ -19,7 +19,7 @@ except ImportError:
 
 LABELS = ['success', 'failure', 'violation']
 COLORS = {'success': 'tab:green', 'failure': 'tab:red', 'violation': 'tab:orange'}
-WINDOW = 30   # giây
+WINDOW = 1   # giây
 
 
 def load_log(path):
@@ -51,9 +51,9 @@ def plot_counts(rolling, plots_dir):
         fig, ax = plt.subplots(figsize=(10, 3))
         ax.plot(rolling.index, rolling[label], color=COLORS[label])
         ax.set_ylim(bottom=0)
-        ax.set_xlabel('Time since first request (s)')
-        ax.set_ylabel(f'{label} count (30s window)')
-        ax.set_title(f'{label.capitalize()} count (rolling 30s)')
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel(f'{label} count ({WINDOW}s window)')
+        ax.set_title(f'{label.capitalize()} count (rolling {WINDOW}s)')
         fig.tight_layout(); fig.savefig(os.path.join(plots_dir, f'count_{label}.png')); plt.close(fig)
 
 
@@ -64,9 +64,9 @@ def plot_ratios(rolling, plots_dir):
         fig, ax = plt.subplots(figsize=(10, 3))
         ax.plot(ratio.index, ratio.values, color=COLORS[label])
         ax.set_ylim(0, 1)
-        ax.set_xlabel('Time since first request (s)')
+        ax.set_xlabel('Time (s)')
         ax.set_ylabel(f'{label} ratio')
-        ax.set_title(f'{label.capitalize()} ratio (rolling 30s)')
+        ax.set_title(f'{label.capitalize()} ratio (rolling {WINDOW}s)')
         fig.tight_layout(); fig.savefig(os.path.join(plots_dir, f'ratio_{label}.png')); plt.close(fig)
 
 
@@ -75,9 +75,9 @@ def plot_combined(rolling, plots_dir):
     for label in LABELS:
         ax.plot(rolling.index, rolling[label], label=label, color=COLORS[label])
     ax.set_ylim(bottom=0)
-    ax.set_xlabel('Time since first request (s)')
-    ax.set_ylabel('count (30s window)')
-    ax.set_title('Success / Failure / Violation per 30s')
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel(f'count ({WINDOW}s window)')
+    ax.set_title(f'Success / Failure / Violation per {WINDOW}s')
     ax.legend()
     fig.tight_layout(); fig.savefig(os.path.join(plots_dir, 'combined_count.png')); plt.close(fig)
 
@@ -101,44 +101,53 @@ def plot_sampler(path, plots_dir):
         return
     try:
         df = pd.read_csv(path)
+        if df.empty:
+            print(f'[visualize] WARNING: sampler CSV empty: {path}')
+            return
         df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True, errors='coerce').dt.tz_localize(None)
+        df = df.dropna(subset=['timestamp']).sort_values('timestamp')
     except Exception as e:
         print(f'[visualize] ERROR reading sampler CSV: {e}')
         return
 
     if df.empty:
-        print(f'[visualize] WARNING: sampler CSV is empty: {path}')
+        print(f'[visualize] WARNING: sampler CSV có rows nhưng timestamp đều null')
         return
 
-    t_min = df['timestamp'].min()
-    t_max = df['timestamp'].max()
+    # Quy đổi về "Time (s)" kể từ sample đầu tiên.
+    t0 = df['timestamp'].iloc[0]
+    df['time_sec'] = (df['timestamp'] - t0).dt.total_seconds()
+
+    t_end = float(df['time_sec'].max()) if len(df) else 0.0
+    if t_end <= 0:
+        t_end = 1.0   # tránh chia 0 / vẽ đường dài 0
 
     def line(category, metric, title, ylabel, fname, color=None):
         sub = df[(df['category'] == category) & (df['metric'] == metric)]
         fig, ax = plt.subplots(figsize=(10, 3))
-        
         if len(sub):
-            ax.plot(sub['timestamp'], sub['value'], color=color or 'tab:blue')
+            ax.plot(sub['time_sec'], sub['value'], color=color or 'tab:blue', linewidth=1.4)
         else:
-            # Nếu không có dữ liệu, vẫn vẽ đường y=0 để biểu đồ không bị trống
-            ax.plot([t_min, t_max], [0, 0], color=color or 'tab:blue', linestyle='--')
-            ax.text(0.5, 0.5, 'No data', transform=ax.transAxes, ha='center', va='center')
-            
+            # Vẫn vẽ đường y=0 để chart không trống.
+            ax.plot([0, t_end], [0, 0], color=color or 'tab:blue', linestyle='--')
+            ax.text(0.5, 0.5, 'no data', transform=ax.transAxes,
+                    ha='center', va='center', color='gray')
+        ax.set_xlim(left=0, right=t_end)
         ax.set_ylim(bottom=0)
         ax.set_title(title)
         ax.set_ylabel(ylabel)
-        ax.set_xlabel('time')
+        ax.set_xlabel('Time (s)')
+        ax.grid(True, alpha=0.3)
         fig.tight_layout()
         fig.savefig(os.path.join(plots_dir, fname))
         plt.close(fig)
 
-    # Vẽ các metric quan trọng
-    line('cpu', 'percent', 'CPU Usage %', '%', 'system_cpu.png', 'tab:orange')
-    line('ram', 'percent', 'RAM Usage %', '%', 'system_ram.png', 'tab:blue')
-    line('jvm', 'jvm.memory.used', 'JVM Memory Used', 'bytes', 'system_jvm_memory.png')
-    line('mysql', 'Threads_running', 'MySQL Threads Running', 'threads', 'system_mysql_threads.png')
-    
-    print(f'[visualize] System charts → {plots_dir}')
+    line('cpu', 'percent',         'CPU Usage %',          '%',       'system_cpu.png',           'tab:orange')
+    line('ram', 'percent',         'RAM Usage %',          '%',       'system_ram.png',           'tab:blue')
+    line('jvm', 'jvm.memory.used', 'JVM Memory Used',      'bytes',   'system_jvm_memory.png')
+    line('mysql', 'Threads_running','MySQL Threads Running','threads', 'system_mysql_threads.png', 'tab:purple')
+
+    print(f'[visualize] system charts → {plots_dir}  ({t_end:.1f}s of data)')
 
 
 def main():
