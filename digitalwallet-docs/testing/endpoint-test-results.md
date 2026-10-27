@@ -8,7 +8,7 @@ File này lưu kết quả test chức năng cho các phần còn thiếu của 
 | --- | --- | --- |
 | `POST /api/v1/linked-banks` | Đã chạy, có lỗi cần sửa | 29 ca: 27 PASS, 2 FAIL |
 | `GET /api/v1/linked-banks` | Đã chạy | 8 ca: 8 PASS, 0 FAIL |
-| `DELETE /api/v1/linked-banks/{id}` | Chưa thực hiện trong đợt bổ sung | — |
+| `DELETE /api/v1/linked-banks/{id}` | Đã chạy, có lỗi cần sửa | 10 ca: 9 PASS, 1 FAIL |
 | `POST /api/v1/transactions/topup` | Chưa thực hiện trong đợt bổ sung | — |
 | `POST /api/v1/transactions/withdraw` | Chưa thực hiện trong đợt bổ sung | — |
 | `POST /api/v1/transactions/transfer` | Chưa thực hiện trong đợt bổ sung | — |
@@ -121,3 +121,42 @@ Từ thư mục `digitalwallet-system`, chạy bằng PowerShell:
 ```
 
 Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.GetLinkedBanksEndpointTest.xml). File trong `build/` không được Git theo dõi; kết quả được ghi tại đây để giữ lại khi chia sẻ repo.
+
+## 4. Hủy liên kết ngân hàng — DELETE /api/v1/linked-banks/{id}
+
+### Lần chạy và phạm vi
+
+- Thời điểm bắt đầu suite cuối: **28/10/2026 01:00:21 (Asia/Bangkok)**; JUnit ghi `2026-10-27T18:00:21.050Z`.
+- Baseline: commit `47085ea`, nhánh `main`; chạy với file test mới trong workspace.
+- Mã test: [UnlinkBankEndpointTest.java](../../digitalwallet-system/src/test/java/sa/uet/digitalwallet_system/adapter/in/web/UnlinkBankEndpointTest.java).
+- Chạy controller, JWT security, `LinkedBankService`, `LinkedBankPersistenceAdapter` và handler lỗi bằng mã thật. `GetWalletUseCase`, JPA repository và mapper được mock.
+- Không khởi động MySQL. Test xác nhận service tạo bản ghi `UNLINKED` và adapter gọi repository theo cặp `id`/ID ví; chưa xác nhận cập nhật dữ liệu thật trong database.
+
+### Kết quả thực tế
+
+JUnit thực thi **10 ca: 9 PASS, 1 FAIL, 0 error, 0 bỏ qua**; suite mất 15,723 giây. Lệnh Gradle kết thúc với **exit code 1** do ca FAIL.
+
+| ID | Trường hợp | Kết quả |
+| --- | --- | --- |
+| ULB-01 | Hủy liên kết `ACTIVE` của ví hiện tại | PASS — `200`, message đúng, không có `data`; lưu trạng thái `UNLINKED` và thời điểm hủy, giữ các trường cũ; không xóa vật lý |
+| ULB-02 | Người dùng khác yêu cầu hủy liên kết thuộc ví đầu tiên | PASS — `404`, chỉ tìm theo ID ví của người dùng hiện tại; không lưu |
+| ULB-03 | ID liên kết không tồn tại | PASS — `404`, không lưu |
+| ULB-04 | Liên kết đã ở trạng thái `UNLINKED` | PASS — `404`, không lưu lần hai |
+| ULB-05 | Thiếu JWT | PASS — `401`, không gọi nghiệp vụ |
+| ULB-06 | JWT không hợp lệ | PASS — `401`, không gọi nghiệp vụ |
+| ULB-07 | JWT hết hạn | PASS — `401`, không gọi nghiệp vụ |
+| ULB-08 | Người dùng đã xác thực nhưng không có ví | PASS — `404`, không truy vấn liên kết |
+| ULB-09 | ID đường dẫn không phải số: `not-a-number` | **FAIL** — kỳ vọng `400` nhưng nhận `500`; không gọi nghiệp vụ |
+| ULB-10 | Repository phát sinh lỗi giả lập | PASS — `500` theo cấu trúc lỗi hiện tại |
+
+`500` ở ULB-10 là kết quả mong đợi của ca giả lập lỗi lưu trữ. **ULB-09 là lỗi thực sự**: tham số `id` được khai báo kiểu `Long`, nhưng lỗi chuyển đổi giá trị đường dẫn không được ánh xạ thành `400 Bad Request`. [GlobalExceptionHandler](../../digitalwallet-system/src/main/java/sa/uet/digitalwallet_system/adapter/in/web/handler/GlobalExceptionHandler.java) chưa có handler riêng cho lỗi chuyển kiểu tham số; handler tổng quát trả `500`. Ca test vẫn giữ kỳ vọng `400` để phát hiện khi lỗi được sửa.
+
+### Chạy lại và bằng chứng
+
+Từ thư mục `digitalwallet-system`, chạy bằng PowerShell:
+
+```powershell
+.\gradlew.bat --gradle-user-home "$env:TEMP\sauetdigitalwallet-gradle" test --tests "sa.uet.digitalwallet_system.adapter.in.web.UnlinkBankEndpointTest" --no-daemon --console=plain
+```
+
+Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.UnlinkBankEndpointTest.xml). File trong `build/` không được Git theo dõi; kết quả được ghi tại đây để giữ lại khi chia sẻ repo. Chỉ chạy class DELETE này; các ca POST và GET chưa được chạy lại trong lần này.
