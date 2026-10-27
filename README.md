@@ -148,15 +148,58 @@ erDiagram
 | `POST`      | `/api/v1/transactions/transfer` | Authenticated | Chuyển tiền nội bộ sang ví khác theo số ví (`target_wallet_number`).       |
 | `GET`       | `/api/v1/transactions`          | Authenticated | Lấy lịch sử giao dịch (nạp, rút, chuyển, nhận tiền) của ví.                |
 
+
+---
+## 4. Kiểm thử tải
+
+- Báo cáo chi tiết: [digitalwallet-docs/stress-test/Report.md](digitalwallet-docs/stress-test/Report.md)
+- Hướng dẫn thiết lập & kịch bản k6: [digitalwallet-stress-test/README.md](digitalwallet-stress-test/README.md)
+
+Hệ thống được kiểm thử tải và kiểm thử áp lực bằng **k6** theo mô hình tải mở (Open Model, State Machine mô phỏng vòng đời người dùng gồm Đăng ký, Đăng nhập, Xem thông tin/số dư, Liên kết ngân hàng, Nạp, Rút và Chuyển tiền). Bài Stress Test chạy trong 30 phút, tăng tải qua 10 bậc (mỗi bậc thêm 200 tài khoản và 100 RPS) với tổng cộng **315,555 requests**.
+
+### 4.1. Bảng tổng hợp kết quả
+
+| Chỉ số | Số lượng | Tỷ lệ | Nhận xét |
+| :--- | :--- | :--- | :--- |
+| **Tổng request** | **315,555** | 100% | 10 bậc tăng tải liên tục trong 30 phút |
+| **Thành công (Success)** | **314,436** | **99.65%** | Hệ thống duy trì thông lượng ổn định |
+| **Thất bại (Failure)** | **1,119** | **0.35%** | 100% là `409 Conflict` ở API `transfer` do tranh chấp khóa |
+| **Vi phạm số dư (Violation)** | **0** | **0.00%** | **Toàn vẹn dữ liệu tuyệt đối**, không xảy ra sai lệch số dư |
+
+### 4.2. Biểu đồ kết quả & Phân tích
+
+#### 1. Phân bố kết quả tổng thể (Overall Result Distribution)
+![Phân bố kết quả tổng thể](digitalwallet-docs/stress-test/figures/results/results_final/stress/plots/pie_overall.png)
+- **Mô tả ngắn gọn:** Tỷ lệ thành công đạt **99.65%**, tỷ lệ lỗi chiếm **0.35%** và không có bất kỳ vi phạm số dư nào (**0% violation**), khẳng định tính toàn vẹn nghiệp vụ tài chính được bảo toàn tuyệt đối khi chịu tải cao.
+
+#### 2. Thông lượng request thành công (Success Count)
+![Số lượng request thành công](digitalwallet-docs/stress-test/figures/results/results_final/stress/plots/count_success.png)
+- **Mô tả ngắn gọn:** Số request thành công đạt đỉnh khoảng **~300 req/s** trong giai đoạn tăng tải ban đầu, sau đó dao động ổn định trong khoảng **100 – 200 req/s** khi hệ thống đạt ngưỡng bão hòa tài nguyên tính toán.
+
+#### 3. Số lượng request thất bại (Failure Count)
+![Số lượng request thất bại](digitalwallet-docs/stress-test/figures/results/results_final/stress/plots/count_failure.png)
+- **Mô tả ngắn gọn:** Lỗi xuất hiện từ khoảng giây thứ 400 (khi CPU chạm mức 100%). Toàn bộ lỗi phát sinh là mã **HTTP 409 Conflict** ở giao dịch chuyển tiền (`transfer`) do cơ chế lock DB kích hoạt để ngăn chặn xung đột khi nhiều tác vụ đồng thời cập nhật số dư cùng một tài khoản.
+
+#### 4. Mức độ sử dụng CPU hệ thống (CPU Usage %)
+![Mức độ sử dụng CPU](digitalwallet-docs/stress-test/figures/results/results_final/stress/plots/system_cpu.png)
+- **Mô tả ngắn gọn:** Mức sử dụng CPU tăng mạnh theo các bậc tải và chạm mức trần **100%** từ giữa bài test. Đây là nút thắt cổ chai (bottleneck) chính do phần mềm sinh tải k6 và hệ thống kiểm thử chạy chung môi trường host.
+
+#### 5. Mức độ sử dụng RAM hệ thống (RAM Usage %)
+![Mức độ sử dụng RAM](digitalwallet-docs/stress-test/figures/results/results_final/stress/plots/system_ram.png)
+- **Mô tả ngắn gọn:** Mức tiêu thụ bộ nhớ RAM duy trì ổn định và an toàn (dưới 50%), không có hiện tượng rò rỉ bộ nhớ (memory leak), ứng dụng giải phóng tài nguyên tốt sau mỗi chu kỳ giao dịch.
+
+#### 6. Luồng thực thi MySQL (MySQL Threads Running)
+![Luồng thực thi MySQL](digitalwallet-docs/stress-test/figures/results/results_final/stress/plots/system_mysql_threads.png)
+- **Mô tả ngắn gọn:** Số lượng luồng MySQL thực thi biến thiên tức thời theo các đợt giao dịch ghi đồng thời, luôn nằm trong ngưỡng kiểm soát an toàn của connection pool mà không làm sập hay treo cơ sở dữ liệu.
 ---
 
-## 4. Gợi ý các cải tiến cho Pha 2
+## 5. Gợi ý các cải tiến cho Pha 2
 
 - Phase 2 - suggestion: [digitalwallet-docs/phase2_suggestion](digitalwallet-docs/phase2_suggestion.md)
-### 4.1. Về Business
+### 5.1. Về Business
 
 - Thay đổi quan hệ giữa User và Wallet thành 1 - N để một User có thể quản lý nhiều ví (ví USD, VNĐ,...)
-### 4.2. Về một số use-cases liên quan tới race condition
+### 5.2. Về một số use-cases liên quan tới race condition
 
 - Use-case 1: Khi yêu cầu data từ frontend được gửi nhiều lần, back-end trả về kết quả giống nhau cho những request này. Vậy vấn đề mình gợi ý để các bạn giải quyết là làm sao cho khi thanh toán được khởi tạo, hệ thống payment cần trừ tiền đúng 1 lần để sao cho một message với cùng một nội dung thì được gửi đúng 1 lần tới user.
 - Use-case 2: Số dư hiện tại của User là N, User thực hiện cùng lúc hai request chuyển tiền với lần lượt số tiền là A và B (A + B > N). Cả hai request đều đọc số dư N trước khi bất kỳ request nào cập nhật dữ liệu ==> Cả hai đều nghĩ giao dịch hợp lệ. Vậy các bạn phải giải quyết vấn đề nếu một trong hai transaction thành công trước thì transaction còn lại phải bị từ chối.
