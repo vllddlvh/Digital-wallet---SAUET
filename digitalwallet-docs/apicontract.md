@@ -1,63 +1,77 @@
-# HỢP ĐỒNG GIAO TIẾP API (API CONTRACT)
-## HỆ THỐNG VÍ ĐIỆN TỬ (DIGITAL WALLET) - PHA 1
+# Hợp đồng API — Digital Wallet baseline pha 1
 
----
+Tài liệu này mô tả API của baseline hiện tại, đối chiếu với [OpenAPI 3.1 JSON](swaggerAPI/api-docs.json), controller và DTO trong `digitalwallet-system`. Các ví dụ thời gian và định danh chỉ nhằm minh họa.
 
-## 1. QUY ƯỚC CHUNG (GENERAL CONVENTIONS)
+## 1. Quy ước chung
 
-### 1.1. Giao thức & Định dạng dữ liệu
-- **Base URL:** `/api/v1`
-- **Giao thức:** HTTP/1.1 hoặc HTTP/2 qua RESTful API.
-- **Content-Type:** `application/json; charset=UTF-8` cho toàn bộ Request Body và Response Body.
-- **Mã hóa ký tự:** Hỗ trợ UTF-8 (tương thích `utf8mb4` trong CSDL).
+- Base path: `/api/v1`. Request có body dùng `Content-Type: application/json`.
+- `POST /auth/register` và `POST /auth/login` là public. Các API nghiệp vụ yêu cầu `Authorization: Bearer <access_token>`.
+- Số tiền dùng số nguyên VND (`Long` trong Java), phải lớn hơn 0. Không dùng số thực cho số dư hoặc số tiền giao dịch.
+- Trường `timestamp` và các trường `createdAt`/`updatedAt`/`linkedAt`/`unlinkedAt` do backend dùng `LocalDateTime`. Giá trị JSON không kèm múi giờ; client không nên mặc định hậu tố `Z` là UTC.
+- Pha 1 lưu thông tin tài khoản ngân hàng liên kết để mô phỏng nạp/rút; chưa tích hợp với hệ thống ngân hàng thật.
 
-### 1.2. Cơ chế Xác thực (Authentication)
-- Sử dụng **JSON Web Token (JWT)** theo chuẩn Bearer Token.
-- Header bắt buộc đối với các endpoint yêu cầu xác thực:
-  ```http
-  Authorization: Bearer <access_token>
-  ```
-- Token được cấp phát qua endpoint `POST /api/v1/auth/login`. Nếu token thiếu, hết hạn hoặc không hợp lệ, hệ thống trả về mã lỗi `401 Unauthorized`.
+### Phản hồi thành công
 
-### 1.3. Chuẩn dữ liệu Tài chính & Thời gian
-- **Đơn vị tiền tệ:** Việt Nam Đồng (VND), kiểu số nguyên `BIGINT` (JSON biểu diễn dạng `number`). Tuyệt đối không dùng số thực, số tiền giao dịch luôn $> 0$.
-- **Dấu thời gian (Timestamp):** Chuẩn ISO-8601 UTC với độ chính xác mili-giây: `YYYY-MM-DDTHH:mm:ss.sssZ` (tương ứng `DATETIME(3)` trong CSDL MySQL).
+HTTP status trùng với `status` trong body. `data` có dạng đối tượng hoặc mảng tùy endpoint; khi không có dữ liệu, trường `data` có thể bị lược bỏ.
 
-### 1.4. Cấu trúc Phản hồi Chuẩn (Standard Response Format)
-
-#### Phản hồi Thành công (Success Response):
 ```json
 {
-  "success": true,
-  "message": "Thông báo kết quả thao tác",
-  "data": { ... }
+  "timestamp": "2026-10-28T10:00:00",
+  "status": 200,
+  "message": "Success",
+  "data": {}
 }
 ```
 
-#### Phản hồi Thất bại (Error Response):
+### Phản hồi lỗi
+
+Lỗi do `GlobalExceptionHandler` xử lý dùng các trường dưới đây; `errors` chỉ xuất hiện khi có chi tiết lỗi validation. Phản hồi `401`/`403` do lớp Spring Security tạo trực tiếp có thể chỉ gồm `status`, `error` và `message`.
+
 ```json
 {
-  "success": false,
-  "errorCode": "TEN_MA_LOI_CHUAN_HOA",
-  "message": "Mô tả chi tiết nguyên nhân lỗi cho client",
-  "timestamp": "2026-10-16T00:00:00.000Z"
+  "timestamp": "2026-10-28T10:00:00",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Validation failed",
+  "path": "/api/v1/transactions/transfer",
+  "errors": {
+    "amount": "Amount must be greater than 0"
+  }
 }
 ```
 
----
+Baseline hiện tại **không trả trường `success` hoặc `errorCode`** trong body. Nếu frontend cần mã lỗi nghiệp vụ ổn định, đó là thay đổi hợp đồng API cho pha sau.
 
-## 2. CHI TIẾT CÁC ENDPOINT (API SPECIFICATIONS)
+## 2. Danh mục endpoint
 
----
+| Method | Endpoint | Xác thực | Thành công | Lỗi được khai báo trong OpenAPI |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/register` | Không | `201` | `400`, `409` |
+| `POST` | `/api/v1/auth/login` | Không | `200` | `400`, `401` |
+| `GET` | `/api/v1/wallets/me` | JWT | `200` | `401`, `404` |
+| `POST` | `/api/v1/linked-banks` | JWT | `201` | `400`, `401`, `404` |
+| `GET` | `/api/v1/linked-banks` | JWT | `200` | `401`, `404` |
+| `DELETE` | `/api/v1/linked-banks/{id}` | JWT | `200` | `401`, `404` |
+| `POST` | `/api/v1/transactions/topup` | JWT | `200` | `400`, `401`, `404` |
+| `POST` | `/api/v1/transactions/withdraw` | JWT | `200` | `400`, `401`, `404` |
+| `POST` | `/api/v1/transactions/transfer` | JWT | `200` | `400`, `401`, `404` |
+| `GET` | `/api/v1/transactions` | JWT | `200` | `401`, `404` |
 
-### NHÓM 1: XÁC THỰC & NGƯỜI DÙNG (AUTHENTICATION)
+OpenAPI cũng khai báo `500` cho các endpoint trên. Khi xảy ra xung đột cập nhật ví, `GlobalExceptionHandler` có thể trả `409 Conflict`; **OpenAPI JSON hiện chưa khai báo `409` cho các endpoint giao dịch**. Đây là điểm cần bổ sung vào đặc tả máy đọc được khi nhóm cập nhật OpenAPI.
 
-#### 1.1. Đăng ký tài khoản (`POST /api/v1/auth/register`)
-- **Mô tả:** Đăng ký tài khoản người dùng mới và tự động khởi tạo 1 ví điện tử chính với số dư `0 VND`, trạng thái `ACTIVE`.
-- **Yêu cầu xác thực:** Không (Public).
-- **Ràng buộc CSDL liên quan:** `uq_users_username`, `uq_users_email`, `chk_users_role`.
+## 3. Xác thực và ví
 
-**Request Body:**
+### `POST /api/v1/auth/register`
+
+Tạo người dùng với vai trò `ROLE_USER` và một ví số dư ban đầu bằng 0. Body gồm bốn trường bắt buộc:
+
+| Trường | Ràng buộc trong request DTO |
+| --- | --- |
+| `username` | Chuỗi không rỗng, tối đa 50 ký tự |
+| `password` | Chuỗi không rỗng, từ 6 đến 100 ký tự |
+| `fullName` | Chuỗi không rỗng, tối đa 100 ký tự |
+| `email` | Email hợp lệ, không rỗng, tối đa 100 ký tự |
+
 ```json
 {
   "username": "nguyenvana",
@@ -66,421 +80,121 @@
   "email": "vana@example.com"
 }
 ```
-*Ràng buộc tham số:*
-- `username`: String (3 - 50 ký tự), không trùng lặp.
-- `password`: String (tối thiểu 6 ký tự).
-- `fullName`: String (1 - 100 ký tự).
-- `email`: String (hợp lệ theo format email, tối đa 100 ký tự), không trùng lặp.
 
-**Response `201 Created`:**
+Trả `201 Created` với `data` là `UserResponse`: `id`, `username`, `fullName`, `email`, `role`, `createdAt`. Phản hồi đăng ký **không chứa đối tượng wallet**; muốn xem ví, client đăng nhập rồi gọi `GET /wallets/me`. Dữ liệu không hợp lệ trả `400`; username hoặc email trùng trả `409`.
+
+### `POST /api/v1/auth/login`
+
+Body gồm `username` và `password`, đều là chuỗi không rỗng. Đăng nhập thành công trả `200 OK` với `data` là `AuthResponse`:
+
 ```json
 {
-  "success": true,
-  "message": "Đăng ký tài khoản thành công",
+  "timestamp": "2026-10-28T10:00:00",
+  "status": 200,
+  "message": "Login successful",
   "data": {
-    "userId": 1,
-    "username": "nguyenvana",
-    "fullName": "Nguyễn Văn A",
-    "email": "vana@example.com",
-    "role": "ROLE_USER",
-    "createdAt": "2026-10-16T00:00:00.000Z",
-    "wallet": {
-      "walletId": 1,
-      "walletNumber": "WAL1029384756",
-      "balance": 0,
-      "status": "ACTIVE"
-    }
-  }
-}
-```
-
-**Lỗi thường gặp:**
-- `400 Bad Request`: Thiếu trường bắt buộc hoặc dữ liệu không đúng định dạng.
-- `409 Conflict` (`USER_ALREADY_EXISTS`): `username` hoặc `email` đã tồn tại trên hệ thống.
-
----
-
-#### 1.2. Đăng nhập (`POST /api/v1/auth/login`)
-- **Mô tả:** Xác thực danh tính qua username và mật khẩu, trả về JWT Access Token.
-- **Yêu cầu xác thực:** Không (Public).
-
-**Request Body:**
-```json
-{
-  "username": "nguyenvana",
-  "password": "Password123@"
-}
-```
-
-**Response `200 OK`:**
-```json
-{
-  "success": true,
-  "message": "Đăng nhập thành công",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "accessToken": "<JWT>",
     "tokenType": "Bearer",
-    "expiresIn": 86400,
-    "user": {
-      "userId": 1,
-      "username": "nguyenvana",
-      "fullName": "Nguyễn Văn A",
-      "role": "ROLE_USER"
-    }
+    "expiresIn": 86400000
   }
 }
 ```
 
-**Lỗi thường gặp:**
-- `401 Unauthorized` (`INVALID_CREDENTIALS`): Sai username hoặc password.
+`expiresIn` tính bằng **mili giây**. Phản hồi không nhúng thông tin user. Dữ liệu thiếu/sai định dạng trả `400`; thông tin đăng nhập sai trả `401`.
 
----
+### `GET /api/v1/wallets/me`
 
-### NHÓM 2: QUẢN LÝ VÍ ĐIỆN TỬ (WALLET MANAGEMENT)
+Không có body hoặc query parameter. Trả `200 OK` với `data` là `WalletResponse` gồm `id`, `userId`, `walletNumber`, `balance`, `status`, `createdAt`, `updatedAt`. Ví không tồn tại trả `404`.
 
-#### 2.1. Xem thông tin ví & số dư (`GET /api/v1/wallets/me`)
-- **Mô tả:** Lấy thông tin chi tiết ví điện tử và số dư tức thời của người dùng đang đăng nhập.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)** *(Thỏa mãn tiêu chí: Endpoint GET cần xác thực)*.
-- **Ràng buộc CSDL liên quan:** Bảng `wallets`, `uq_wallets_user`.
+## 4. Tài khoản ngân hàng liên kết
 
-**Request Headers:**
-```http
-Authorization: Bearer <access_token>
-```
+### `POST /api/v1/linked-banks`
 
-**Response `200 OK`:**
-```json
-{
-  "success": true,
-  "message": "Lấy thông tin ví thành công",
-  "data": {
-    "walletId": 1,
-    "walletNumber": "WAL1029384756",
-    "balance": 5000000,
-    "status": "ACTIVE",
-    "createdAt": "2026-10-16T00:00:00.000Z",
-    "updatedAt": "2026-10-16T00:15:30.120Z"
-  }
-}
-```
+Body gồm các trường bắt buộc:
 
-**Lỗi thường gặp:**
-- `401 Unauthorized`: Chưa truyền Token hoặc Token không hợp lệ.
-- `404 Not Found` (`WALLET_NOT_FOUND`): Không tìm thấy ví tương ứng với tài khoản.
+| Trường | Ràng buộc trong request DTO |
+| --- | --- |
+| `bankCode` | Chuỗi không rỗng, tối đa 20 ký tự |
+| `bankName` | Chuỗi không rỗng, tối đa 100 ký tự |
+| `accountNumber` | Chuỗi không rỗng, tối đa 50 ký tự |
+| `holderName` | Chuỗi không rỗng, tối đa 100 ký tự |
 
----
-
-### NHÓM 3: LIÊN KẾT TÀI KHOẢN NGÂN HÀNG (LINKED BANK ACCOUNTS)
-
-#### 3.1. Liên kết tài khoản ngân hàng mới (`POST /api/v1/linked-banks`)
-- **Mô tả:** Liên kết tài khoản ngân hàng vào ví phục vụ nạp và rút tiền. Số tài khoản được che mờ tự động trước khi lưu.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)** *(Thỏa mãn tiêu chí: Endpoint POST cần xác thực)*.
-- **Ràng buộc CSDL liên quan:** Bảng `linked_bank_accounts`, `fk_linked_wallet`, `chk_linked_status`.
-
-**Request Body:**
 ```json
 {
   "bankCode": "VCB",
-  "bankName": "Ngân hàng TMCP Ngoại thương Việt Nam",
+  "bankName": "Vietcombank",
   "accountNumber": "0123456789",
   "holderName": "NGUYEN VAN A"
 }
 ```
-*Ràng buộc tham số:*
-- `bankCode`: String (tối đa 20 ký tự, ví dụ: VCB, TCB, MB, VIB).
-- `bankName`: String (tối đa 100 ký tự).
-- `accountNumber`: String (chỉ chứa số, độ dài 6 - 20 số).
-- `holderName`: String (viết hoa không dấu, tối đa 100 ký tự).
 
-**Response `201 Created`:**
+Trả `201 Created` với `data` là `LinkedBankResponse`: `id`, `walletId`, `bankCode`, `bankName`, `accountNumberMasked`, `holderName`, `status`, `linkedAt`, `unlinkedAt`. DTO hiện không bắt buộc tài khoản chỉ gồm chữ số hoặc tên chủ tài khoản viết hoa. Dữ liệu không hợp lệ trả `400`; không tìm thấy ví trả `404`.
+
+### `GET /api/v1/linked-banks`
+
+Trả `200 OK` với `data` là **mảng `LinkedBankResponse`** của các liên kết đang `ACTIVE`; mảng có thể rỗng. Không có phân trang hoặc query parameter. Không tìm thấy ví trả `404`.
+
+### `DELETE /api/v1/linked-banks/{id}`
+
+`id` là ID kiểu số nguyên của liên kết ngân hàng. Endpoint hủy liên kết bằng cách đổi trạng thái sang `UNLINKED`. Trả `200 OK` với message `Bank account unlinked successfully`; **không trả đối tượng liên kết đã cập nhật** trong `data`. ID không tồn tại hoặc không thuộc ví của người dùng trả `404` theo xử lý hiện tại.
+
+## 5. Giao dịch
+
+Cả ba endpoint giao dịch đều dùng `description` tùy chọn (tối đa 255 ký tự) và `amount` bắt buộc, kiểu số nguyên, tối thiểu 1. `referenceCode` được **server tự sinh** khi tạo bản ghi giao dịch; client không gửi `referenceCode` và baseline hiện không cung cấp idempotency key do client quản lý.
+
+Phản hồi thành công của ba endpoint đều là `200 OK` với `data` là `TransactionResponse`:
+
+| Trường trong `data` | Ý nghĩa |
+| --- | --- |
+| `id`, `referenceCode`, `type` | ID, mã tham chiếu server sinh, loại `TOPUP`/`WITHDRAW`/`TRANSFER` |
+| `sourceWalletId`, `targetWalletId` | ID ví nguồn/đích; phía không áp dụng có thể là `null` |
+| `linkedBankAccountId` | ID liên kết ngân hàng; `null` khi chuyển tiền nội bộ |
+| `amount`, `description`, `createdAt` | Số tiền, mô tả và thời điểm tạo |
+
+Phản hồi này **không có `newBalance`, `sourceWalletNumber` hoặc `targetWalletNumber`**. Muốn lấy số dư mới, client gọi `GET /api/v1/wallets/me`.
+
+### `POST /api/v1/transactions/topup`
+
 ```json
 {
-  "success": true,
-  "message": "Liên kết tài khoản ngân hàng thành công",
-  "data": {
-    "id": 1,
-    "bankCode": "VCB",
-    "bankName": "Ngân hàng TMCP Ngoại thương Việt Nam",
-    "accountNumberMasked": "******6789",
-    "holderName": "NGUYEN VAN A",
-    "status": "ACTIVE",
-    "linkedAt": "2026-10-16T00:10:00.000Z"
-  }
-}
-```
-
-**Lỗi thường gặp:**
-- `400 Bad Request`: Thông tin tài khoản ngân hàng không hợp lệ.
-- `401 Unauthorized`: Chưa xác thực.
-
----
-
-#### 3.2. Lấy danh sách ngân hàng liên kết (`GET /api/v1/linked-banks`)
-- **Mô tả:** Lấy danh sách tất cả tài khoản ngân hàng đang kích hoạt (`status = 'ACTIVE'`) của người dùng hiện tại.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)**.
-- **Ràng buộc CSDL liên quan:** `idx_linked_wallet_status (wallet_id, status)`.
-
-**Response `200 OK`:**
-```json
-{
-  "success": true,
-  "message": "Lấy danh sách tài khoản ngân hàng thành công",
-  "data": [
-    {
-      "id": 1,
-      "bankCode": "VCB",
-      "bankName": "Ngân hàng TMCP Ngoại thương Việt Nam",
-      "accountNumberMasked": "******6789",
-      "holderName": "NGUYEN VAN A",
-      "status": "ACTIVE",
-      "linkedAt": "2026-10-16T00:10:00.000Z"
-    }
-  ]
-}
-```
-
----
-
-#### 3.3. Hủy liên kết tài khoản ngân hàng (`DELETE /api/v1/linked-banks/{id}`)
-- **Mô tả:** Hủy liên kết tài khoản ngân hàng bằng cơ chế xóa mềm (Soft Delete). Trạng thái chuyển thành `UNLINKED` và cập nhật `unlinked_at`.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)** *(Thỏa mãn tiêu chí: Endpoint method DELETE)*.
-- **Ràng buộc CSDL liên quan:** `chk_linked_unlinked_at`.
-
-**Path Parameters:**
-- `id`: `BIGINT` - Định danh bản ghi liên kết ngân hàng cần hủy.
-
-**Response `200 OK`:**
-```json
-{
-  "success": true,
-  "message": "Hủy liên kết tài khoản ngân hàng thành công",
-  "data": {
-    "id": 1,
-    "status": "UNLINKED",
-    "unlinkedAt": "2026-10-16T00:20:00.000Z"
-  }
-}
-```
-
-**Lỗi thường gặp:**
-- `401 Unauthorized`: Chưa xác thực.
-- `403 Forbidden` (`ACCESS_DENIED`): Bản ghi ngân hàng này không thuộc sở hữu của ví người dùng hiện tại.
-- `404 Not Found` (`BANK_ACCOUNT_NOT_FOUND`): Không tìm thấy tài khoản ngân hàng hoặc tài khoản đã hủy trước đó.
-
----
-
-### NHÓM 4: GIAO DỊCH TÀI CHÍNH & SỔ CÁI (TRANSACTIONS LEDGER)
-
-#### 4.1. Nạp tiền vào ví (`POST /api/v1/transactions/topup`)
-- **Mô tả:** Nạp tiền từ tài khoản ngân hàng liên kết vào ví. Số dư ví tăng lên, ghi sổ cái giao dịch `TOPUP`.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)**.
-- **Ràng buộc CSDL liên quan:** `chk_tx_shape` (yêu cầu `source_wallet_id IS NULL`, `target_wallet_id NOT NULL`, `linked_bank_account_id NOT NULL`), `chk_tx_amount (amount > 0)`.
-
-**Request Body:**
-```json
-{
-  "referenceCode": "550e8400-e29b-41d4-a716-446655440000",
   "linkedBankAccountId": 1,
-  "amount": 1000000,
-  "description": "Nạp tiền từ VCB vào ví"
-}
-```
-*Ràng buộc tham số:*
-- `referenceCode`: UUID v4 (36 ký tự, Idempotency key, duy nhất).
-- `linkedBankAccountId`: BIGINT (phải thuộc ví hiện tại và đang `ACTIVE`).
-- `amount`: BIGINT (số tiền $> 0$).
-- `description`: String (tối đa 255 ký tự, tùy chọn).
-
-**Response `201 Created`:**
-```json
-{
-  "success": true,
-  "message": "Nạp tiền vào ví thành công",
-  "data": {
-    "transactionId": 101,
-    "referenceCode": "550e8400-e29b-41d4-a716-446655440000",
-    "type": "TOPUP",
-    "amount": 1000000,
-    "newBalance": 6000000,
-    "targetWalletNumber": "WAL1029384756",
-    "linkedBankAccountId": 1,
-    "description": "Nạp tiền từ VCB vào ví",
-    "createdAt": "2026-10-16T00:25:00.000Z"
-  }
+  "amount": 100000,
+  "description": "Nap tien"
 }
 ```
 
-**Lỗi thường gặp:**
-- `400 Bad Request` (`INVALID_AMOUNT`): Số tiền $\le 0$.
-- `404 Not Found` (`BANK_ACCOUNT_NOT_FOUND`): Tài khoản ngân hàng không tồn tại hoặc không ở trạng thái `ACTIVE`.
-- `409 Conflict` (`DUPLICATE_REFERENCE_CODE`): Trùng lặp `referenceCode` (giao dịch đã được xử lý trước đó).
+`linkedBankAccountId` bắt buộc và phải thuộc ví người gọi. Endpoint cộng số dư và tạo bản ghi `TOPUP`. Ví hoặc liên kết ngân hàng không tồn tại trả `404`; dữ liệu không hợp lệ hoặc ví không hoạt động trả `400`.
 
----
+### `POST /api/v1/transactions/withdraw`
 
-#### 4.2. Rút tiền về ngân hàng (`POST /api/v1/transactions/withdraw`)
-- **Mô tả:** Rút tiền từ ví về tài khoản ngân hàng liên kết. Số dư ví giảm, ghi sổ cái giao dịch `WITHDRAW`.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)**.
-- **Ràng buộc CSDL liên quan:** `chk_tx_shape` (yêu cầu `source_wallet_id NOT NULL`, `target_wallet_id IS NULL`, `linked_bank_account_id NOT NULL`), `chk_wallets_balance (balance >= 0)`.
-
-**Request Body:**
 ```json
 {
-  "referenceCode": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
   "linkedBankAccountId": 1,
-  "amount": 500000,
-  "description": "Rút tiền về thẻ VCB"
+  "amount": 50000,
+  "description": "Rut tien"
 }
 ```
 
-**Response `201 Created`:**
+`linkedBankAccountId` bắt buộc và phải thuộc ví người gọi. Endpoint kiểm tra số dư, trừ tiền và tạo bản ghi `WITHDRAW`. Thiếu tiền, ví không hoạt động hoặc dữ liệu không hợp lệ trả `400`; ví/liên kết không tồn tại trả `404`.
+
+### `POST /api/v1/transactions/transfer`
+
 ```json
 {
-  "success": true,
-  "message": "Rút tiền về tài khoản ngân hàng thành công",
-  "data": {
-    "transactionId": 102,
-    "referenceCode": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-    "type": "WITHDRAW",
-    "amount": 500000,
-    "newBalance": 5500000,
-    "sourceWalletNumber": "WAL1029384756",
-    "linkedBankAccountId": 1,
-    "description": "Rút tiền về thẻ VCB",
-    "createdAt": "2026-10-16T00:30:00.000Z"
-  }
-}
-```
-
-**Lỗi thường gặp:**
-- `400 Bad Request` (`INSUFFICIENT_BALANCE`): Số dư ví không đủ để rút tiền (`balance < amount`).
-- `400 Bad Request` (`WALLET_FROZEN`): Ví đang bị đóng băng hoặc không hoạt động.
-
----
-
-#### 4.3. Chuyển tiền giữa hai ví (`POST /api/v1/transactions/transfer`)
-- **Mô tả:** Chuyển tiền từ ví người gửi sang ví người nhận bằng số ví (`targetWalletNumber`). Thực thi atomic transaction: trừ ví gửi, cộng ví nhận, ghi sổ cái `TRANSFER`.
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)**.
-- **Ràng buộc CSDL liên quan:** `chk_tx_shape` (yêu cầu `source_wallet_id <> target_wallet_id`, `linked_bank_account_id IS NULL`), `chk_wallets_balance`.
-
-**Request Body:**
-```json
-{
-  "referenceCode": "c73bcdcc-2669-4bf6-81d3-e4ae73fb11fd",
   "targetWalletNumber": "WAL9876543210",
-  "amount": 200000,
-  "description": "Chuyển tiền trả tiền ăn trưa"
-}
-```
-*Ràng buộc tham số:*
-- `referenceCode`: UUID v4 (36 ký tự).
-- `targetWalletNumber`: String (số ví người nhận, khác số ví người gửi).
-- `amount`: BIGINT (số tiền $> 0$).
-- `description`: String (tối đa 255 ký tự).
-
-**Response `201 Created`:**
-```json
-{
-  "success": true,
-  "message": "Chuyển tiền thành công",
-  "data": {
-    "transactionId": 103,
-    "referenceCode": "c73bcdcc-2669-4bf6-81d3-e4ae73fb11fd",
-    "type": "TRANSFER",
-    "amount": 200000,
-    "newBalance": 5300000,
-    "sourceWalletNumber": "WAL1029384756",
-    "targetWalletNumber": "WAL9876543210",
-    "description": "Chuyển tiền trả tiền ăn trưa",
-    "createdAt": "2026-10-16T00:35:00.000Z"
-  }
+  "amount": 20000,
+  "description": "Chuyen tien"
 }
 ```
 
-**Lỗi thường gặp:**
-- `400 Bad Request` (`SAME_WALLET_TRANSFER`): Ví nguồn và ví đích trùng nhau.
-- `400 Bad Request` (`INSUFFICIENT_BALANCE`): Số dư ví người gửi không đủ.
-- `404 Not Found` (`TARGET_WALLET_NOT_FOUND`): Không tìm thấy ví người nhận.
-- `400 Bad Request` (`WALLET_INACTIVE`): Ví gửi hoặc ví nhận đang bị khóa/đóng băng (`FROZEN`/`CLOSED`).
+`targetWalletNumber` bắt buộc, không rỗng. Endpoint trừ ví gửi, cộng ví nhận và ghi bản ghi `TRANSFER` trong một transaction. Chuyển vào chính ví mình, thiếu tiền, ví không hoạt động hoặc dữ liệu không hợp lệ trả `400`; không tìm thấy ví trả `404`. Xung đột cập nhật đồng thời có thể trả `409` như đã nêu ở mục 2.
 
----
+### `GET /api/v1/transactions`
 
-#### 4.4. Tra cứu lịch sử giao dịch (`GET /api/v1/transactions`)
-- **Mô tả:** Lấy danh sách giao dịch tài chính (Nạp, Rút, Chuyển) có liên quan đến ví của người dùng hiện tại (làm ví nguồn hoặc ví đích), sắp xếp thời gian giảm dần (`created_at DESC`).
-- **Yêu cầu xác thực:** **Có (`Bearer Token`)**.
-- **Ràng buộc CSDL liên quan:** `idx_tx_source_created`, `idx_tx_target_created`.
+Trả `200 OK` với `data` là **mảng `TransactionResponse`** của giao dịch có ví hiện tại ở phía nguồn hoặc đích, sắp xếp `createdAt` giảm dần. Endpoint hiện **không nhận `page`/`size`, không trả `content`/`totalPages` và không có trường `direction`**. Không tìm thấy ví trả `404`.
 
-**Query Parameters:**
-- `page`: Integer (tùy chọn, mặc định `0`).
-- `size`: Integer (tùy chọn, mặc định `20`, tối đa `100`).
+## 6. Tài liệu API
 
-**Response `200 OK`:**
-```json
-{
-  "success": true,
-  "message": "Lấy lịch sử giao dịch thành công",
-  "data": {
-    "content": [
-      {
-        "id": 103,
-        "referenceCode": "c73bcdcc-2669-4bf6-81d3-e4ae73fb11fd",
-        "type": "TRANSFER",
-        "direction": "OUT",
-        "amount": 200000,
-        "sourceWalletId": 1,
-        "targetWalletId": 2,
-        "linkedBankAccountId": null,
-        "description": "Chuyển tiền trả tiền ăn trưa",
-        "createdAt": "2026-10-16T00:35:00.000Z"
-      },
-      {
-        "id": 101,
-        "referenceCode": "550e8400-e29b-41d4-a716-446655440000",
-        "type": "TOPUP",
-        "direction": "IN",
-        "amount": 1000000,
-        "sourceWalletId": null,
-        "targetWalletId": 1,
-        "linkedBankAccountId": 1,
-        "description": "Nạp tiền từ VCB vào ví",
-        "createdAt": "2026-10-16T00:25:00.000Z"
-      }
-    ],
-    "page": 0,
-    "size": 20,
-    "totalElements": 2,
-    "totalPages": 1
-  }
-}
-```
-
----
-
-### NHÓM 5: TÀI LIỆU API (API DOCUMENTATION)
-
-| Endpoint | Method | Quyền hạn | Mô tả |
-| :--- | :---: | :---: | :--- |
-| `/api-docs` | `GET` | Public | Cung cấp tài liệu OpenAPI dạng JSON Schema |
-| `/swagger-ui.html` | `GET` | Public | Giao diện đồ họa tương tác và kiểm thử API trực quan (Swagger UI) |
-
----
-
-## 3. BẢNG MÃ LỖI NGHIỆP VỤ (ERROR CODES REFERENCE)
-
-| Mã lỗi (`errorCode`) | HTTP Status | Mô tả chi tiết nguyên nhân |
-| :--- | :---: | :--- |
-| `INVALID_INPUT` | `400 Bad Request` | Dữ liệu đầu vào không hợp lệ hoặc thiếu trường bắt buộc |
-| `INVALID_AMOUNT` | `400 Bad Request` | Số tiền giao dịch phải là số nguyên dương $> 0$ |
-| `INSUFFICIENT_BALANCE` | `400 Bad Request` | Số dư trong ví không đủ để rút hoặc chuyển tiền |
-| `SAME_WALLET_TRANSFER` | `400 Bad Request` | Không thể chuyển tiền cho chính ví của mình |
-| `WALLET_FROZEN` | `400 Bad Request` | Ví đang ở trạng thái FROZEN hoặc CLOSED, không thể giao dịch |
-| `BANK_ACCOUNT_UNLINKED` | `400 Bad Request` | Tài khoản ngân hàng đã bị hủy liên kết trước đó |
-| `INVALID_CREDENTIALS` | `401 Unauthorized` | Tên đăng nhập hoặc mật khẩu không chính xác |
-| `UNAUTHORIZED` | `401 Unauthorized` | Token không hợp lệ, thiếu token hoặc token đã hết hạn |
-| `ACCESS_DENIED` | `403 Forbidden` | Không có quyền truy cập hoặc thao tác trên tài nguyên của người khác |
-| `WALLET_NOT_FOUND` | `404 Not Found` | Không tìm thấy ví tương ứng |
-| `TARGET_WALLET_NOT_FOUND` | `404 Not Found` | Số ví người nhận không tồn tại trên hệ thống |
-| `BANK_ACCOUNT_NOT_FOUND` | `404 Not Found` | Không tìm thấy tài khoản ngân hàng liên kết |
-| `USER_ALREADY_EXISTS` | `409 Conflict` | Username hoặc email đã được đăng ký |
-| `DUPLICATE_REFERENCE_CODE` | `409 Conflict` | Mã tham chiếu giao dịch (`referenceCode`) đã tồn tại |
-| `CONCURRENT_UPDATE_CONFLICT` | `409 Conflict` | Xung đột cập nhật đồng thời (Optimistic Lock Version) |
-| `INTERNAL_SERVER_ERROR` | `500 Server Error` | Lỗi máy chủ ngoài ý muốn |
+- Khi chạy backend theo cấu hình mặc định: `GET /v3/api-docs` và giao diện `/swagger-ui.html`.
+- Profile `dev` cấu hình đường dẫn JSON thành `/api-docs`.
+- Bản OpenAPI JSON đã lưu trong repo: [`swaggerAPI/api-docs.json`](swaggerAPI/api-docs.json).
