@@ -7,7 +7,7 @@ File này lưu kết quả test chức năng cho các phần còn thiếu của 
 | Endpoint | Trạng thái | Kết quả gần nhất |
 | --- | --- | --- |
 | `POST /api/v1/linked-banks` | Đã chạy, có lỗi cần sửa | 29 ca: 27 PASS, 2 FAIL |
-| `GET /api/v1/linked-banks` | Chưa thực hiện trong đợt bổ sung | — |
+| `GET /api/v1/linked-banks` | Đã chạy | 8 ca: 8 PASS, 0 FAIL |
 | `DELETE /api/v1/linked-banks/{id}` | Chưa thực hiện trong đợt bổ sung | — |
 | `POST /api/v1/transactions/topup` | Chưa thực hiện trong đợt bổ sung | — |
 | `POST /api/v1/transactions/withdraw` | Chưa thực hiện trong đợt bổ sung | — |
@@ -84,3 +84,40 @@ Từ thư mục `digitalwallet-system`, chạy bằng PowerShell:
 Báo cáo máy đọc được dùng để tổng hợp số liệu: [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.LinkBankEndpointTest.xml). Có thể xem thêm [báo cáo HTML của Gradle](../../digitalwallet-system/build/reports/tests/test/index.html) và [log lần chạy](../../digitalwallet-system/build/link-bank-test.log).
 
 Các file trong `build/` được sinh khi chạy test và không được Git theo dõi; bảng kết quả và lỗi ở trên được lưu trực tiếp trong Markdown để đọc được sau khi chia sẻ repo.
+
+## 3. Liên kết ngân hàng — GET /api/v1/linked-banks
+
+### Lần chạy và phạm vi
+
+- Thời điểm bắt đầu suite: **28/10/2026 00:43:07 (Asia/Bangkok)**; JUnit ghi `2026-10-27T17:43:07.131Z`.
+- Baseline: commit `519e086`, nhánh `main`; chạy với file test mới trong workspace.
+- Mã test: [GetLinkedBanksEndpointTest.java](../../digitalwallet-system/src/test/java/sa/uet/digitalwallet_system/adapter/in/web/GetLinkedBanksEndpointTest.java).
+- Chạy `LinkedBankController`, JWT security, `LinkedBankService`, `LinkedBankPersistenceAdapter` và handler lỗi bằng mã thật. `GetWalletUseCase`, JPA repository và mapper được mock.
+- Không khởi động MySQL. Test xác nhận adapter gọi repository theo đúng ID ví và trạng thái `ACTIVE`; chưa kiểm chứng truy vấn SQL hoặc dữ liệu lưu thật.
+
+### Kết quả thực tế
+
+JUnit thực thi **8 ca: 8 PASS, 0 FAIL, 0 error, 0 bỏ qua**; suite mất 19,919 giây. Lệnh Gradle kết thúc với **exit code 0**.
+
+| ID | Trường hợp | Kết quả |
+| --- | --- | --- |
+| GLB-01 | JWT hợp lệ; trả mảng hai liên kết `ACTIVE` của ví đang đăng nhập, đúng trường phản hồi; số tài khoản được che | PASS — `200`; repository được gọi với ID ví và `ACTIVE`, không ghi dữ liệu |
+| GLB-02 | Ví không có liên kết đang hoạt động | PASS — `200`, `data: []` |
+| GLB-03 | Người dùng thứ hai có ví khác | PASS — chỉ truy vấn ID ví của người dùng thứ hai |
+| GLB-04 | Thiếu JWT | PASS — `401`, không gọi nghiệp vụ |
+| GLB-05 | JWT không hợp lệ | PASS — `401`, không gọi nghiệp vụ |
+| GLB-06 | JWT hết hạn | PASS — `401`, không gọi nghiệp vụ |
+| GLB-07 | Người dùng đã xác thực nhưng không có ví | PASS — `404`, không truy vấn liên kết |
+| GLB-08 | Repository phát sinh lỗi giả lập | PASS — `500` theo cấu trúc lỗi hiện tại |
+
+`500` ở GLB-08 là kết quả mong đợi của tình huống lỗi lưu trữ được giả lập, không phải ca test thất bại. Chỉ chạy class GET này; các lỗi đã ghi nhận ở bộ POST chưa được sửa hoặc chạy lại trong lần này.
+
+### Chạy lại và bằng chứng
+
+Từ thư mục `digitalwallet-system`, chạy bằng PowerShell:
+
+```powershell
+.\gradlew.bat --gradle-user-home "$env:TEMP\sauetdigitalwallet-gradle" test --tests "sa.uet.digitalwallet_system.adapter.in.web.GetLinkedBanksEndpointTest" --no-daemon --console=plain
+```
+
+Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.GetLinkedBanksEndpointTest.xml). File trong `build/` không được Git theo dõi; kết quả được ghi tại đây để giữ lại khi chia sẻ repo.
