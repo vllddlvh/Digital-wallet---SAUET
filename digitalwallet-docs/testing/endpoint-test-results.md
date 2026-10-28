@@ -9,7 +9,7 @@ File này lưu kết quả test chức năng cho các phần còn thiếu của 
 | `POST /api/v1/linked-banks` | Đã chạy, có lỗi cần sửa | 29 ca: 27 PASS, 2 FAIL |
 | `GET /api/v1/linked-banks` | Đã chạy | 8 ca: 8 PASS, 0 FAIL |
 | `DELETE /api/v1/linked-banks/{id}` | Đã chạy, có lỗi cần sửa | 10 ca: 9 PASS, 1 FAIL |
-| `POST /api/v1/transactions/topup` | Chưa thực hiện trong đợt bổ sung | — |
+| `POST /api/v1/transactions/topup` | Đã chạy, có lỗi cần sửa | 12 ca: 11 PASS, 1 FAIL |
 | `POST /api/v1/transactions/withdraw` | Chưa thực hiện trong đợt bổ sung | — |
 | `POST /api/v1/transactions/transfer` | Chưa thực hiện trong đợt bổ sung | — |
 | `GET /api/v1/transactions` | Chưa thực hiện trong đợt bổ sung | — |
@@ -160,3 +160,34 @@ Từ thư mục `digitalwallet-system`, chạy bằng PowerShell:
 ```
 
 Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.UnlinkBankEndpointTest.xml). File trong `build/` không được Git theo dõi; kết quả được ghi tại đây để giữ lại khi chia sẻ repo. Chỉ chạy class DELETE này; các ca POST và GET chưa được chạy lại trong lần này.
+
+## 5. Nạp tiền — POST /api/v1/transactions/topup
+
+### Phạm vi và kết quả
+
+- Lần chạy: **28/10/2026 20:05:45 (Asia/Bangkok)**; JUnit ghi `2026-10-28T13:05:45.651Z`. Baseline: commit `b5e9eb5` trên `main`, cùng file test mới trong workspace.
+- Mã test: [TopupEndpointTest.java](../../digitalwallet-system/src/test/java/sa/uet/digitalwallet_system/adapter/in/web/TopupEndpointTest.java). Controller, JWT security, validation, `TransactionService` và handler lỗi dùng mã thật; các port ví, ngân hàng và giao dịch được mock.
+- **12 ca thực thi: 11 PASS, 1 FAIL, 0 error, 0 bỏ qua**; suite mất 5,257 giây. Gradle kết thúc với exit code 1 do ca FAIL.
+- Không chạy MySQL hoặc tích hợp ngân hàng thật; test xác nhận lệnh ghi ví và giao dịch được gửi tới port, chưa xác nhận dữ liệu lưu bền vững hay tiền thực được chuyển.
+
+| ID | Trường hợp | Kết quả |
+| --- | --- | --- |
+| TU-01 | JWT hợp lệ, nạp 250 vào ví có số dư 1000 | PASS — `200`; ví mới có số dư 1250; tạo giao dịch `TOPUP` gắn đúng ví và liên kết ngân hàng |
+| TU-02–TU-06 | Thiếu ID ngân hàng, thiếu số tiền, số tiền bằng 0, số tiền âm, mô tả dài 256 ký tự | PASS (5/5) — `400`, không gọi nghiệp vụ |
+| TU-07–TU-08 | Thiếu JWT, JWT không hợp lệ | PASS (2/2) — `401`, không gọi nghiệp vụ |
+| TU-09 | Người dùng không có ví | PASS — `404`, không ghi ví/giao dịch |
+| TU-10 | Ví không hoạt động | PASS — `400`, không ghi ví/giao dịch |
+| TU-11 | Liên kết ngân hàng không thuộc ví hiện tại hoặc không tồn tại | PASS — `404`, không ghi ví/giao dịch |
+| TU-12 | Liên kết ngân hàng đã `UNLINKED` | **FAIL** — kỳ vọng từ chối `400`, thực tế trả `200` |
+
+**TU-12 là lỗi nghiệp vụ:** `TransactionService.topup` chỉ kiểm tra liên kết ngân hàng có tồn tại theo ID và ví, chưa kiểm tra trạng thái `ACTIVE`. Vì thế liên kết đã hủy vẫn đi qua luồng cộng số dư và ghi giao dịch. Hướng sửa là yêu cầu liên kết ở trạng thái `ACTIVE` trước khi cập nhật ví; giữ assertion của test để xác nhận sau khi sửa. Đây là kiểm tra logic hiện tại, không xác nhận giao dịch với ngân hàng ngoài hệ thống.
+
+### Chạy lại
+
+Từ thư mục `digitalwallet-system`:
+
+```powershell
+.\gradlew.bat --gradle-user-home "$env:TEMP\sauetdigitalwallet-gradle" test --tests "sa.uet.digitalwallet_system.adapter.in.web.TopupEndpointTest" --no-daemon --console=plain
+```
+
+Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.TopupEndpointTest.xml). File trong `build/` không được Git theo dõi. Chỉ chạy class nạp tiền trong lần này.
