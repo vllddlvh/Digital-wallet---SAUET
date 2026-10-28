@@ -10,7 +10,7 @@ File này lưu kết quả test chức năng cho các phần còn thiếu của 
 | `GET /api/v1/linked-banks` | Đã chạy | 8 ca: 8 PASS, 0 FAIL |
 | `DELETE /api/v1/linked-banks/{id}` | Đã chạy, có lỗi cần sửa | 10 ca: 9 PASS, 1 FAIL |
 | `POST /api/v1/transactions/topup` | Đã chạy, có lỗi cần sửa | 12 ca: 11 PASS, 1 FAIL |
-| `POST /api/v1/transactions/withdraw` | Chưa thực hiện trong đợt bổ sung | — |
+| `POST /api/v1/transactions/withdraw` | Đã chạy, có lỗi cần sửa | 11 ca: 10 PASS, 1 FAIL |
 | `POST /api/v1/transactions/transfer` | Chưa thực hiện trong đợt bổ sung | — |
 | `GET /api/v1/transactions` | Chưa thực hiện trong đợt bổ sung | — |
 
@@ -191,3 +191,30 @@ Từ thư mục `digitalwallet-system`:
 ```
 
 Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.TopupEndpointTest.xml). File trong `build/` không được Git theo dõi. Chỉ chạy class nạp tiền trong lần này.
+
+## 6. Rút tiền — POST /api/v1/transactions/withdraw
+
+- Lần chạy: **28/10/2026 20:07:12 (Asia/Bangkok)**; JUnit ghi `2026-10-28T13:07:12.604Z`. Baseline: commit `9e4c1d9` trên `main`, cùng file test mới trong workspace.
+- Mã test: [WithdrawEndpointTest.java](../../digitalwallet-system/src/test/java/sa/uet/digitalwallet_system/adapter/in/web/WithdrawEndpointTest.java). Controller, JWT, validation và `TransactionService` dùng mã thật; các port lưu trữ được mock. Không chạy MySQL hay ngân hàng thật.
+- **11 ca: 10 PASS, 1 FAIL, 0 error, 0 bỏ qua**; suite mất 4,174 giây. Gradle exit code 1 do ca FAIL.
+
+| ID | Trường hợp | Kết quả |
+| --- | --- | --- |
+| WD-01 | Rút 250 từ số dư 1000 | PASS — `200`; số dư gửi tới port lưu là 750, ghi giao dịch `WITHDRAW` |
+| WD-02 | Rút đúng toàn bộ số dư | PASS — `200`; số dư mới bằng 0 |
+| WD-03 | Rút vượt số dư | PASS — `400`, không ghi ví/giao dịch |
+| WD-04–WD-06 | Thiếu ID ngân hàng, số tiền bằng 0, thiếu số tiền | PASS (3/3) — `400`, không gọi nghiệp vụ |
+| WD-07–WD-08 | Thiếu JWT, JWT không hợp lệ | PASS (2/2) — `401`, không gọi nghiệp vụ |
+| WD-09 | Ví không hoạt động | PASS — `400`, không ghi ví/giao dịch |
+| WD-10 | Liên kết không thuộc ví hoặc không tồn tại | PASS — `404`, không ghi ví/giao dịch |
+| WD-11 | Liên kết đã `UNLINKED` | **FAIL** — kỳ vọng từ chối `400`, thực tế `200` |
+
+**WD-11 là lỗi nghiệp vụ:** `TransactionService.withdraw` kiểm tra liên kết tồn tại theo ID và ví nhưng không kiểm tra trạng thái `ACTIVE`. Liên kết đã hủy vẫn đi qua luồng trừ số dư và ghi giao dịch. Cần kiểm tra trạng thái trước khi cập nhật ví, rồi chạy lại test giữ kỳ vọng `400`.
+
+Chạy lại từ `digitalwallet-system`:
+
+```powershell
+.\gradlew.bat --gradle-user-home "$env:TEMP\sauetdigitalwallet-gradle" test --tests "sa.uet.digitalwallet_system.adapter.in.web.WithdrawEndpointTest" --no-daemon --console=plain
+```
+
+Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.WithdrawEndpointTest.xml). File trong `build/` không được Git theo dõi. Chỉ chạy class rút tiền trong lần này.
