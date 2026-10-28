@@ -11,7 +11,7 @@ File này lưu kết quả test chức năng cho các phần còn thiếu của 
 | `DELETE /api/v1/linked-banks/{id}` | Đã chạy, có lỗi cần sửa | 10 ca: 9 PASS, 1 FAIL |
 | `POST /api/v1/transactions/topup` | Đã chạy, có lỗi cần sửa | 12 ca: 11 PASS, 1 FAIL |
 | `POST /api/v1/transactions/withdraw` | Đã chạy, có lỗi cần sửa | 11 ca: 10 PASS, 1 FAIL |
-| `POST /api/v1/transactions/transfer` | Chưa thực hiện trong đợt bổ sung | — |
+| `POST /api/v1/transactions/transfer` | Đã chạy | 11 ca: 11 PASS, 0 FAIL |
 | `GET /api/v1/transactions` | Chưa thực hiện trong đợt bổ sung | — |
 
 ## 2. Liên kết ngân hàng — POST /api/v1/linked-banks
@@ -218,3 +218,29 @@ Chạy lại từ `digitalwallet-system`:
 ```
 
 Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.WithdrawEndpointTest.xml). File trong `build/` không được Git theo dõi. Chỉ chạy class rút tiền trong lần này.
+
+## 7. Chuyển tiền — POST /api/v1/transactions/transfer
+
+- Lần chạy: **28/10/2026 20:08:33 (Asia/Bangkok)**; JUnit ghi `2026-10-28T13:08:33.845Z`. Baseline: commit `caf45c8` trên `main`, cùng file test mới trong workspace.
+- Mã test: [TransferEndpointTest.java](../../digitalwallet-system/src/test/java/sa/uet/digitalwallet_system/adapter/in/web/TransferEndpointTest.java). Controller, JWT, validation và `TransactionService` dùng mã thật; các port lưu trữ được mock.
+- **11 ca: 11 PASS, 0 FAIL, 0 error, 0 bỏ qua**; suite mất 4,241 giây; Gradle exit code 0.
+
+| ID | Trường hợp | Kết quả |
+| --- | --- | --- |
+| TF-01 | Chuyển 250 từ ví có 1000 sang ví có 500 | PASS — `200`; gửi số dư mới 750 cho cả hai ví và ghi giao dịch `TRANSFER` đúng ví nguồn/đích |
+| TF-02 | Chuyển cho chính ví nguồn | PASS — `400`, không ghi dữ liệu |
+| TF-03 | Không đủ số dư | PASS — `400`, không ghi dữ liệu |
+| TF-04–TF-05 | Ví nguồn hoặc ví đích không hoạt động | PASS (2/2) — `400`, không ghi dữ liệu |
+| TF-06 | Không tìm thấy ví đích | PASS — `404`, không ghi dữ liệu |
+| TF-07–TF-09 | Số ví đích trống, số tiền bằng 0, thiếu số tiền | PASS (3/3) — `400`, không gọi nghiệp vụ |
+| TF-10–TF-11 | Thiếu JWT, JWT không hợp lệ | PASS (2/2) — `401`, không gọi nghiệp vụ |
+
+Test không chạy MySQL, nên chưa xác nhận transaction database thực sự rollback đồng thời hai cập nhật ví và ghi giao dịch. Chưa kiểm thử cạnh tranh nhiều request trong đợt bổ sung này.
+
+Chạy lại từ `digitalwallet-system`:
+
+```powershell
+.\gradlew.bat --gradle-user-home "$env:TEMP\sauetdigitalwallet-gradle" test --tests "sa.uet.digitalwallet_system.adapter.in.web.TransferEndpointTest" --no-daemon --console=plain
+```
+
+Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.TransferEndpointTest.xml). File trong `build/` không được Git theo dõi.
