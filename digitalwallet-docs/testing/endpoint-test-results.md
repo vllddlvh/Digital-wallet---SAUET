@@ -12,7 +12,7 @@ File này lưu kết quả test chức năng cho các phần còn thiếu của 
 | `POST /api/v1/transactions/topup` | Đã chạy, có lỗi cần sửa | 12 ca: 11 PASS, 1 FAIL |
 | `POST /api/v1/transactions/withdraw` | Đã chạy, có lỗi cần sửa | 11 ca: 10 PASS, 1 FAIL |
 | `POST /api/v1/transactions/transfer` | Đã chạy | 11 ca: 11 PASS, 0 FAIL |
-| `GET /api/v1/transactions` | Chưa thực hiện trong đợt bổ sung | — |
+| `GET /api/v1/transactions` | Đã chạy | 7 ca: 7 PASS, 0 FAIL |
 
 ## 2. Liên kết ngân hàng — POST /api/v1/linked-banks
 
@@ -244,3 +244,28 @@ Chạy lại từ `digitalwallet-system`:
 ```
 
 Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.TransferEndpointTest.xml). File trong `build/` không được Git theo dõi.
+
+## 8. Lịch sử giao dịch — GET /api/v1/transactions
+
+- Lần chạy: **28/10/2026 20:09:56 (Asia/Bangkok)**; JUnit ghi `2026-10-28T13:09:56.619Z`. Baseline: commit `2553d81` trên `main`, cùng file test mới trong workspace.
+- Mã test: [GetTransactionsEndpointTest.java](../../digitalwallet-system/src/test/java/sa/uet/digitalwallet_system/adapter/in/web/GetTransactionsEndpointTest.java). Controller, JWT, `TransactionService`, persistence adapter và handler lỗi dùng mã thật; `GetWalletUseCase`, repository và mapper được mock.
+- **7 ca: 7 PASS, 0 FAIL, 0 error, 0 bỏ qua**; suite mất 4,404 giây; Gradle exit code 0.
+
+| ID | Trường hợp | Kết quả |
+| --- | --- | --- |
+| GH-01 | Ví có hai giao dịch trả về từ repository | PASS — `200`, mảng hai `TransactionResponse` đúng thứ tự đầu vào, truy vấn theo ID ví hiện tại |
+| GH-02 | Ví không có giao dịch | PASS — `200`, `data: []` |
+| GH-03 | Người dùng thứ hai có ví khác | PASS — chỉ truy vấn ID ví thứ hai |
+| GH-04–GH-05 | Thiếu JWT, JWT không hợp lệ | PASS (2/2) — `401`, không truy vấn dữ liệu |
+| GH-06 | Người dùng không có ví | PASS — `404`, không truy vấn giao dịch |
+| GH-07 | Repository phát sinh lỗi giả lập | PASS — `500` theo cấu trúc lỗi hiện tại |
+
+`500` ở GH-07 là kết quả mong đợi khi giả lập lỗi lưu trữ. Test không chạy MySQL: mới xác nhận adapter gọi repository theo ID ví và giữ thứ tự danh sách repository trả về; chưa xác nhận truy vấn SQL thực sự lọc ví nguồn/đích hoặc sắp xếp `createdAt DESC`.
+
+Chạy lại từ `digitalwallet-system`:
+
+```powershell
+.\gradlew.bat --gradle-user-home "$env:TEMP\sauetdigitalwallet-gradle" test --tests "sa.uet.digitalwallet_system.adapter.in.web.GetTransactionsEndpointTest" --no-daemon --console=plain
+```
+
+Số liệu lấy từ [JUnit XML](../../digitalwallet-system/build/test-results/test/TEST-sa.uet.digitalwallet_system.adapter.in.web.GetTransactionsEndpointTest.xml). File trong `build/` không được Git theo dõi.
