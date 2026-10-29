@@ -13,3 +13,6 @@ PROGRESS.md
 
 .DS_Store
 
+# Docker secrets
+.env
+

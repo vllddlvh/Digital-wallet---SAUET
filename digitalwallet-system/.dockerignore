@@ -1,0 +1,23 @@
+# Build artifacts
+build/
+bin/
+out/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Gradle cache (wrapper JAR is needed)
+.gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.md
+sadw*
+

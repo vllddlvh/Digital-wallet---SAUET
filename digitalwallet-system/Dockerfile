@@ -6,7 +6,7 @@ WORKDIR /workspace
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
-RUN ./gradlew dependencies --no-daemon || true
+RUN chmod +x gradlew && ./gradlew dependencies --no-daemon || true
 
 # Copy source and build executable bootJar
 COPY src src
@@ -14,10 +14,15 @@ RUN ./gradlew bootJar --no-daemon -x test
 
 # Stage 2: Minimalist Lightweight JRE 21 Runtime Container
 FROM eclipse-temurin:21-jre-alpine
+
+LABEL maintainer="SAUETDigitalWallet" \
+      description="Digital Wallet System - Spring Boot 4 / JDK 21"
+
 WORKDIR /app
 
-# Run as non-privileged system user for container security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Install curl for healthcheck, then create non-privileged user
+RUN apk add --no-cache curl \
+    && addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=builder /workspace/build/libs/*.jar app.jar
 RUN chown -R appuser:appgroup /app
@@ -25,6 +30,9 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/v3/api-docs || exit 1
 
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
