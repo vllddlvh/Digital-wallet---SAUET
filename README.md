@@ -19,7 +19,7 @@ Hệ thống Backend RESTful API cho dịch vụ Ví điện tử. Ứng dụng 
 
 Dự án áp dụng Hexagonal Architecture: Business core (`Domain` & `Application`) nằm ở trung tâm, không phụ thuộc vào Framework hay Database. Mọi giao tiếp của Business và Infrastructure đều thông qua Ports và Adapters.
 - Architecture docs: [digitalwallet-docs/architecture](digitalwallet-docs/architecture.md)
-- Đọc thêm về Hexagonal Architecture: https://github.com/thombergs/buckpal
+- Đọc thêm về Hexagonal Architecture: https://github.com/thombergs/buckpal | https://huynt.dev/products/kien-truc-ung-dung-web
 
 ```mermaid
 flowchart LR
